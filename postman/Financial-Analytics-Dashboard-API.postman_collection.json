@@ -1,0 +1,212 @@
+{
+  "info": {
+    "_postman_id": "b7e3a1c2-4f5d-4e6a-9c8b-1a2b3c4d5e6f",
+    "name": "Financial Analytics Dashboard API",
+    "description": "REST API for the Financial Analytics Dashboard full-stack assignment.\n\n## Getting started\n1. Set the `baseUrl` variable (local default: `http://localhost:4000`).\n2. Run **Auth → Login** first. A test script captures the JWT into the `token` collection variable, so every other request authenticates automatically.\n3. All `/api/transactions/*` routes require the Bearer token.\n\n## CSV export\n**Transactions → Export CSV** POSTs `{ \"columns\": [...] }` plus any filters and returns a downloadable CSV attachment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Unauthenticated liveness probe."
+      },
+      "response": []
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analyst@fin.com\",\n  \"password\": \"secret123\",\n  \"name\": \"Jane Analyst\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates an account and returns a JWT (201)."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 200 && body.token) {",
+                  "    pm.collectionVariables.set('token', body.token);",
+                  "    pm.test('token captured', () => pm.expect(body.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@fin.com\",\n  \"password\": \"demo1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Returns `{ token, user }`. The test script stores the JWT in the `token` collection variable for the other requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "auth": "bearer",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "List (paginated)",
+          "request": {
+            "method": "GET",
+            "auth": "bearer",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Default list, newest first."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter (category, status, user, date, amount)",
+          "request": {
+            "method": "GET",
+            "auth": "bearer",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?category=Revenue&status=Paid&userId=user_001&dateFrom=2024-01-01&dateTo=2024-06-30&minAmount=500&maxAmount=3000&sortBy=amount&sortDir=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                { "key": "category", "value": "Revenue" },
+                { "key": "status", "value": "Paid" },
+                { "key": "userId", "value": "user_001" },
+                { "key": "dateFrom", "value": "2024-01-01" },
+                { "key": "dateTo", "value": "2024-06-30" },
+                { "key": "minAmount", "value": "500" },
+                { "key": "maxAmount", "value": "3000" },
+                { "key": "sortBy", "value": "amount" },
+                { "key": "sortDir", "value": "desc" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search",
+          "request": {
+            "method": "GET",
+            "auth": "bearer",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?search=user_003",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions"],
+              "query": [{ "key": "search", "value": "user_003" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Summary (analytics)",
+          "request": {
+            "method": "GET",
+            "auth": "bearer",
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions", "summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export CSV",
+          "request": {
+            "method": "POST",
+            "auth": "bearer",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"columns\": [\"id\", \"date\", \"amount\", \"category\", \"status\"],\n  \"category\": \"Revenue\",\n  \"status\": \"Paid\",\n  \"minAmount\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/export/csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transactions", "export", "csv"]
+            },
+            "description": "Body: `columns` (required subset of id, date, amount, category, status, user_id, user_profile) plus optional filters (search, category, status, userId, dateFrom, dateTo, minAmount, maxAmount) and sortBy/sortDir. Returns CSV attachment."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
