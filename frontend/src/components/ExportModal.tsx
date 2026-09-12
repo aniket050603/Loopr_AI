@@ -10,7 +10,9 @@ import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import DownloadIcon from '@mui/icons-material/Download';
+import { alpha } from '@mui/material/styles';
 import { api } from '../api/client';
+import { showAlert } from './SnackbarHost';
 import { TRANSACTION_FIELDS, type TransactionField } from '../types';
 
 interface ExportModalProps {
@@ -70,42 +72,111 @@ export default function ExportModal({ open, onClose, queryString }: ExportModalP
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      showAlert('CSV exported', 'success');
       onClose();
+    } catch {
+      showAlert('Export failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
   }
 
+  const allSelected = selected.size === TRANSACTION_FIELDS.length;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Configure CSV Export</DialogTitle>
-      <DialogContent dividers>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Choose which columns to include. Current table filters and sorting are applied to the
-          export.
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          bgcolor: 'rgba(14,21,38,0.92)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(148,163,184,0.16)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.55)',
+        },
+      }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography variant="subtitle1" component="div" fontWeight={800} letterSpacing="-0.01em">
+          Export CSV
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5, mt: 1 }}>
-          {TRANSACTION_FIELDS.map((field) => (
-            <FormControlLabel
-              key={field}
-              control={
-                <Checkbox
-                  checked={selected.has(field)}
-                  onChange={() => toggle(field)}
-                />
-              }
-              label={LABELS[field]}
-            />
-          ))}
+        <Typography variant="caption" component="div" color="text.secondary">
+          Columns + current filters &amp; sorting are applied
+        </Typography>
+      </DialogTitle>
+      <DialogContent dividers sx={{ borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+          <Button
+            size="small"
+            onClick={() =>
+              setSelected(
+                allSelected ? new Set() : new Set(TRANSACTION_FIELDS),
+              )
+            }
+            sx={{ fontSize: 12 }}
+          >
+            {allSelected ? 'Deselect all' : 'Select all'}
+          </Button>
         </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25 }}>
+          {TRANSACTION_FIELDS.map((field) => {
+            const checked = selected.has(field);
+            return (
+              <FormControlLabel
+                key={field}
+                sx={{
+                  mx: -0.5,
+                  px: 1,
+                  py: 0.4,
+                  borderRadius: 2,
+                  transition: 'background-color 0.15s ease',
+                  '&:hover': { bgcolor: 'rgba(148,163,184,0.07)' },
+                }}
+                control={
+                  <Checkbox
+                    checked={checked}
+                    onChange={() => toggle(field)}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      '&.Mui-checked': { color: 'primary.light' },
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ fontSize: 13.5 }}>
+                    {LABELS[field]}
+                  </Typography>
+                }
+              />
+            );
+          })}
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+          {selected.size} of {TRANSACTION_FIELDS.length} columns selected
+        </Typography>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
+        <Button onClick={onClose} color="inherit" sx={{ borderRadius: 2.5 }}>
+          Cancel
+        </Button>
         <Button
           onClick={handleExport}
           variant="contained"
-          startIcon={<DownloadIcon />}
+          startIcon={
+            loading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
+          }
           disabled={selected.size === 0 || loading}
+          sx={{
+            borderRadius: 2.5,
+            color: '#fff',
+            background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #22D3EE 140%)',
+            boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
+            '&:disabled': { color: '#fff', opacity: 0.6 },
+          }}
         >
           {loading ? 'Exporting…' : 'Export CSV'}
         </Button>

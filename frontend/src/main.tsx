@@ -3,23 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import App from './App';
+import { theme } from './theme';
 import { AuthProvider } from './auth/AuthContext';
 import { SnackbarProvider } from './components/SnackbarHost';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#2563eb' },
-    secondary: { main: '#16a34a' },
-    error: { main: '#dc2626' },
-    background: { default: '#f4f6fb' },
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-  },
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {
