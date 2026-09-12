@@ -28,12 +28,12 @@ import FilterBar from './FilterBar';
 import ExportModal from './ExportModal';
 import type { Transaction, TransactionFilters } from '../types';
 
-const COLUMNS: Array<{ key: keyof Transaction; label: string; numeric?: boolean; hideOnMobile?: boolean; width?: number | string }> = [
-  { key: 'id', label: 'No.', numeric: true, width: { xs: 48, md: 64 } as never },
+const COLUMNS: Array<{ key: keyof Transaction; label: string; labelMobile?: string; numeric?: boolean; hideOnMobile?: boolean; width?: number | string }> = [
+  { key: 'id', label: 'No.', labelMobile: '#', numeric: true, width: { xs: 34, md: 64 } as never },
   { key: 'date', label: 'Date' },
-  { key: 'amount', label: 'Amount', numeric: true, width: { xs: 108, md: 140 } as never },
+  { key: 'amount', label: 'Amount', numeric: true, width: { xs: 104, md: 140 } as never },
   { key: 'category', label: 'Category', hideOnMobile: true, width: 110 },
-  { key: 'status', label: 'Status', width: { xs: 96, md: 104 } as never },
+  { key: 'status', label: 'Status', width: { xs: 92, md: 104 } as never },
   { key: 'user_id', label: 'User', hideOnMobile: true, width: 96 },
 ];
 
@@ -51,10 +51,13 @@ const dateTime = new Intl.DateTimeFormat('en-GB', {
   hour12: false,
 });
 
-function ledgerDate(d: Date): string {
+function ledgerDate(d: Date, detail: 'full' | 'date' | 'short'): string {
   const parts = dateTime.formatToParts(d);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  return `${get('day')} ${get('month')} '${get('year')} · ${get('hour')}:${get('minute')}`;
+  const base = `${get('day')} ${get('month')}`;
+  if (detail === 'short') return base;
+  const dated = `${base} '${get('year')}`;
+  return detail === 'full' ? `${dated} · ${get('hour')}:${get('minute')}` : dated;
 }
 
 const MONO = FONT_MONO;
@@ -112,11 +115,11 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
   }
 
   const columns = isMobile ? COLUMNS.filter((c) => !c.hideOnMobile) : COLUMNS;
-  const colSpan = columns.length + 1;
+  const colSpan = columns.length + (isMobile ? 0 : 1);
 
   const headSx = {
     fontWeight: 600,
-    fontSize: 10.5,
+    fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: '0.12em',
     color: 'text.secondary',
@@ -125,7 +128,19 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
   } as const;
 
   return (
-    <Paper elevation={0} sx={{ borderRadius: '10px', overflow: 'hidden' }}>
+    <Paper
+      id="transactions"
+      elevation={0}
+      sx={{
+        borderRadius: '14px',
+        overflow: 'hidden',
+        scrollMarginTop: 80,
+        boxShadow: (t2) =>
+          t2.palette.mode === 'light'
+            ? '0 1px 3px rgba(25,24,19,0.04), 0 8px 28px rgba(25,24,19,0.05)'
+            : '0 1px 3px rgba(0,0,0,0.3), 0 10px 32px rgba(0,0,0,0.35)',
+      }}
+    >
       <Box sx={{ p: { xs: 2, md: 2.5 } }}>
         <SectionHeader
           index="03"
@@ -179,9 +194,25 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
         ) : null}
 
         <TableContainer sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Table size="small" sx={{ tableLayout: 'fixed' }}>
+          <Table
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              tableLayout: 'fixed',
+              '& .MuiTableCell-root': {
+                px: { xs: 0.6, md: 1.5 },
+                py: { xs: 1.25, md: 1.4 },
+              },
+            }}
+          >
             <TableHead>
-              <TableRow>
+              <TableRow
+                sx={{
+                  '& th': {
+                    bgcolor: 'background.paper',
+                    boxShadow: (t2) => `inset 0 -1px 0 ${t2.palette.divider}`,
+                  },
+                }}
+              >
                 {columns.map((column) => {
                   const w = typeof column.width === 'object' ? (isMobile ? (column.width as any).xs : (column.width as any).md) : column.width;
                   return (
@@ -199,15 +230,17 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                         fontSize: 'inherit',
                         letterSpacing: 'inherit',
                         '&.Mui-active': { color: 'text.primary' },
-                        '& .MuiTableSortLabel-icon': { fontSize: 14 },
+                        '& .MuiTableSortLabel-icon': { fontSize: 13 },
                       }}
                     >
-                      {column.label}
+                      {isMobile && column.labelMobile ? column.labelMobile : column.label}
                     </TableSortLabel>
                   </TableCell>
                   );
                 })}
-                <TableCell sx={{ ...headSx, width: 44, textAlign: 'right' }}></TableCell>
+                {isMobile ? null : (
+                  <TableCell sx={{ ...headSx, width: 44, textAlign: 'right' }}></TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -219,29 +252,39 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                           <Skeleton height={20} />
                         </TableCell>
                       ))}
-                      <TableCell>
-                        <Skeleton variant="circular" width={26} height={26} />
-                      </TableCell>
+                      {isMobile ? null : (
+                        <TableCell>
+                          <Skeleton variant="circular" width={28} height={28} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
-                : data?.items.map((tx) => (
+                : data?.items.map((tx, rowIndex) => (
                     <TableRow
                       key={tx.id}
                       hover
                       sx={{
                         '&:last-child td': { borderBottom: 0 },
+                        animation: `rowIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(
+                          rowIndex * 0.035,
+                          0.4,
+                        ).toFixed(2)}s both`,
+                        '@keyframes rowIn': {
+                          from: { opacity: 0, transform: 'translateY(6px)' },
+                          to: { opacity: 1, transform: 'none' },
+                        },
                       }}
                     >
                       <TableCell
                         align="right"
-                        sx={{ fontFamily: MONO, fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' }}
+                        sx={{ fontFamily: MONO, fontSize: 13, color: 'text.secondary', whiteSpace: 'nowrap' }}
                       >
                         {String(tx.id).padStart(3, '0')}
                       </TableCell>
-                      <TableCell sx={{ fontFamily: MONO, fontSize: 12, whiteSpace: 'nowrap', color: 'text.secondary' }}>
-                        {ledgerDate(new Date(tx.date))}
+                      <TableCell sx={{ fontFamily: MONO, fontSize: { xs: 13, md: 13.5 }, whiteSpace: 'nowrap', color: 'text.secondary' }}>
+                        {ledgerDate(new Date(tx.date), isMobile ? 'short' : 'full')}
                       </TableCell>
-                      <TableCell align="right" sx={{ fontSize: 13, fontWeight: 600 }}>
+                      <TableCell align="right" sx={{ fontSize: { xs: 14, md: 15 }, fontWeight: 700 }}>
                         <Signed
                           value={currency.format(tx.amount).replace('$', '')}
                           currency="$"
@@ -249,7 +292,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                         />
                       </TableCell>
                       {isMobile ? null : (
-                        <TableCell sx={{ fontSize: 12.5 }}>
+                        <TableCell sx={{ fontSize: 14 }}>
                           <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
                             <Dot color={tx.category === 'Revenue' ? theme.palette.success.main : theme.palette.error.main} />
                             {tx.category}
@@ -264,16 +307,16 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                             alignItems: 'center',
                             gap: 1,
                             px: 1.25,
-                            py: 0.35,
+                            py: 0.45,
                             borderRadius: 999,
-                            fontSize: 11.5,
+                            fontSize: { xs: 12, md: 12.5 },
                             fontWeight: 600,
                             fontFamily: MONO,
                             letterSpacing: '0.04em',
                             bgcolor: (t) =>
                               alpha(
                                 tx.status === 'Paid' ? t.palette.success.main : t.palette.warning.main,
-                                0.12,
+                                0.13,
                               ),
                             color: (t) =>
                               tx.status === 'Paid' ? t.palette.success.main : t.palette.warning.main,
@@ -287,23 +330,26 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                         </Box>
                       </TableCell>
                       {isMobile ? null : (
-                        <TableCell sx={{ fontSize: 12.5, color: 'text.secondary' }}>{tx.user_id}</TableCell>
+                        <TableCell sx={{ fontSize: 14, color: 'text.secondary' }}>{tx.user_id}</TableCell>
                       )}
-                      <TableCell align="right">
-                        <Avatar
-                          src={tx.user_profile}
-                          sx={{
-                            width: 26,
-                            height: 26,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            ml: 'auto',
-                            bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
-                            color: 'text.secondary',
-                            border: `1px solid ${theme.palette.divider}`,
-                          }}
-                        />
-                      </TableCell>
+                      {isMobile ? null : (
+                        <TableCell align="right">
+                          <Avatar
+                            src={tx.user_profile}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              ml: 'auto',
+                              bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+                              color: 'text.secondary',
+                              border: `1px solid ${theme.palette.divider}`,
+                              transition: 'transform 0.18s ease',
+                            }}
+                          />
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
               {!isLoading && data?.items.length === 0 ? (
@@ -331,10 +377,10 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
           }}
           rowsPerPageOptions={[10, 25, 50, 100]}
           sx={{
-            mt: 1,
+            mt: 0.5,
             fontFamily: FONT_MONO,
             fontSize: 12,
-            '& .MuiTablePagination-toolbar': { minHeight: 48 },
+            '& .MuiTablePagination-toolbar': { minHeight: 44 },
             '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
               fontFamily: FONT_MONO,
               fontSize: 12,

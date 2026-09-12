@@ -9,6 +9,9 @@ export interface Palette {
   border: string;
   borderStrong: string;
   text: string;
+  ink: string;
+  inkHover: string;
+  inkText: string;
   muted: string;
   faint: string;
   accent: string;
@@ -27,6 +30,9 @@ const LIGHT: Palette = {
   border: '#E2DFD6',
   borderStrong: '#D6D2C4',
   text: '#191813',
+  ink: '#191813',
+  inkHover: '#33312A',
+  inkText: '#FFFFFF',
   muted: '#6B675C',
   faint: '#A8A399',
   accent: '#0F7B5F',
@@ -45,6 +51,9 @@ const DARK: Palette = {
   border: '#2C2F28',
   borderStrong: '#3A3E35',
   text: '#EDEBE3',
+  ink: '#EDEBE3',
+  inkHover: '#FFFFFF',
+  inkText: '#131512',
   muted: '#9BA08F',
   faint: '#6E7365',
   accent: '#5BBFA0',
@@ -64,6 +73,8 @@ export const FONT_DISPLAY = '"Fraunces", Georgia, "Times New Roman", serif';
 export const FONT_MONO = '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 export const FONT_UI =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+export const SIDEBAR_WIDTH = 232;
 
 export function buildTheme(mode: LedgerMode) {
   const p = getPalette(mode);
@@ -105,6 +116,11 @@ export function buildTheme(mode: LedgerMode) {
         defaultProps: { disableElevation: true },
         styleOverrides: {
           root: { borderRadius: 4 },
+          contained: {
+            backgroundColor: p.ink,
+            color: p.inkText,
+            '&:hover': { backgroundColor: p.inkHover },
+          },
           outlined: { borderColor: p.borderStrong, color: p.text },
         },
       },

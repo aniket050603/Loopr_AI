@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import Container from '@mui/material/Container';
 import { useAuth } from './auth/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import AppShell from './components/AppShell';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -18,12 +18,9 @@ export default function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Container
-              maxWidth="lg"
-              sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, md: 4 }, maxWidth: 1200 }}
-            >
+            <AppShell>
               <DashboardPage />
-            </Container>
+            </AppShell>
           </ProtectedRoute>
         }
       />

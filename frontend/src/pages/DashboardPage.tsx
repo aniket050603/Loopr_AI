@@ -1,29 +1,23 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import { alpha, useTheme } from '@mui/material/styles';
 import { FONT_DISPLAY, FONT_MONO } from '../theme/theme';
-import { usePalette } from '../theme/ThemeModeProvider';
-import { useLedgerMode } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
 import { useSummary } from '../hooks/useDashboardData';
 import { showAlert } from '../components/SnackbarHost';
 import SummaryCards from '../components/SummaryCards';
 import Charts from '../components/Charts';
 import TransactionsTable from '../components/TransactionsTable';
-
 import type { TransactionFilters } from '../types';
 
 const EMPTY_FILTERS: TransactionFilters = {};
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const theme = useTheme();
-  const palette = usePalette();
-  const { mode, toggle } = useLedgerMode();
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<TransactionFilters>(EMPTY_FILTERS);
   const { data: summary, isLoading, error } = useSummary();
 
   if (error) {
@@ -35,23 +29,29 @@ export default function DashboardPage() {
   }
 
   const rule = theme.palette.divider;
-  const currency0 = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 3, md: 5 } }}>
-      {/* Masthead */}
-      <Box>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: 1560,
+        mx: 'auto',
+        px: { xs: 2.5, sm: 4, lg: 6 },
+        py: { xs: 3, md: 4 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 3.5, md: 5 },
+      }}
+    >
+      {/* Page header */}
+      <Box id="overview" sx={{ scrollMarginTop: 24 }}>
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'flex-end',
             gap: 2,
-            pb: 2,
+            flexWrap: 'wrap',
           }}
         >
           <Box>
@@ -71,8 +71,8 @@ export default function DashboardPage() {
               sx={{
                 fontFamily: FONT_DISPLAY,
                 fontWeight: 600,
-                fontSize: { xs: 30, md: 36 },
-                lineHeight: 1.05,
+                fontSize: { xs: 28, md: 34 },
+                lineHeight: 1.08,
                 letterSpacing: '-0.015em',
                 mt: 0.5,
               }}
@@ -80,42 +80,32 @@ export default function DashboardPage() {
               Financial Analytics
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pt: 1 }}>
-            <Button
-              onClick={toggle}
-              aria-label="Toggle color mode"
-              sx={{
-                minWidth: 0,
-                px: 1.25,
-                py: 0.5,
-                fontFamily: FONT_MONO,
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                color: 'text.secondary',
-                border: `1px solid ${rule}`,
-                borderRadius: 999,
-                '&:hover': { color: 'text.primary', borderColor: palette.borderStrong },
-              }}
-            >
-              {mode === 'light' ? 'NIGHT' : 'DAY'}
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={logout}
-              sx={{
-                px: 1.75,
-                py: 0.5,
-                fontFamily: FONT_MONO,
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                borderRadius: 999,
-              }}
-            >
-              EXIT
-            </Button>
+        </Box>
+        <Box sx={{ height: 3, bgcolor: 'text.primary', mt: 1.5 }} />
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 3,
+            flexWrap: 'wrap',
+            pt: 1,
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            color: 'text.secondary',
+          }}
+        >
+          <Box component="span">
+            VOL. {summary?.metrics.transactionCount ?? '—'} RECORDS
+          </Box>
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            FY 2024
+          </Box>
+          <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+            {user?.name?.toUpperCase() ?? user?.email?.toUpperCase()}
+          </Box>
+          <Box component="span" sx={{ ml: 'auto', display: { xs: 'none', md: 'inline' } }}>
+            SOURCE · MONGODB ATLAS
           </Box>
         </Box>
-        <Box sx={{ height: 3, bgcolor: 'text.primary' }} />
       </Box>
 
       {isLoading ? (
@@ -135,7 +125,8 @@ export default function DashboardPage() {
                 bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
                 animation: 'lpulse 1.4s ease-in-out infinite',
                 '@keyframes lpulse': { '0%,100%': { opacity: 0.5 }, '50%': { opacity: 1 } },
-              }}              />
+              }}
+            />
           ))}
         </Box>
       ) : summary ? (
