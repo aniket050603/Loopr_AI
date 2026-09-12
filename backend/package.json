@@ -11,7 +11,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/scripts/seed.ts",
-    "smoke": "tsx src/scripts/smoke-setup.ts"
+    "smoke": "tsx src/scripts/smoke-setup.ts",
+    "preview": "node preview-server.mjs"
   },
   "dependencies": {
     "@json2csv/plainjs": "^7.0.8",
