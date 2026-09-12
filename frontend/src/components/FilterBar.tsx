@@ -5,8 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import { alpha } from '@mui/material/styles';
+import { FONT_MONO } from '../theme/theme';
 import { debounce } from '../utils/debounce';
 import type { TransactionFilters } from '../types';
 
@@ -16,6 +15,11 @@ interface FilterBarProps {
 }
 
 const USER_IDS = ['user_001', 'user_002', 'user_003', 'user_004'];
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': { borderRadius: '6px' },
+  '& .MuiInputLabel-root': { fontSize: 13 },
+} as const;
 
 export default function FilterBar({ filters, onChange }: FilterBarProps) {
   const [searchDraft, setSearchDraft] = useState(filters.search ?? '');
@@ -49,8 +53,9 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
       sx={{
         display: 'grid',
         gap: 1.25,
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
+        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
         alignItems: 'center',
+        mb: 2,
       }}
     >
       <TextField
@@ -68,12 +73,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
             </InputAdornment>
           ),
         }}
-        sx={{
-          gridColumn: { xs: '1', md: 'span 2' },
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 2.5,
-          },
-        }}
+        sx={{ ...fieldSx, gridColumn: { xs: 'span 2', md: 'span 2' } }}
       />
 
       <TextField
@@ -82,7 +82,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         label="Category"
         value={filters.category ?? ''}
         onChange={(e) => update('category', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       >
         <MenuItem value="">All</MenuItem>
         <MenuItem value="Revenue">Revenue</MenuItem>
@@ -95,7 +95,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         label="Status"
         value={filters.status ?? ''}
         onChange={(e) => update('status', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       >
         <MenuItem value="">All</MenuItem>
         <MenuItem value="Paid">Paid</MenuItem>
@@ -108,7 +108,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         label="User"
         value={filters.userId ?? ''}
         onChange={(e) => update('userId', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       >
         <MenuItem value="">All users</MenuItem>
         {USER_IDS.map((id) => (
@@ -125,7 +125,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         InputLabelProps={{ shrink: true }}
         value={filters.dateFrom ?? ''}
         onChange={(e) => update('dateFrom', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       />
 
       <TextField
@@ -135,7 +135,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         InputLabelProps={{ shrink: true }}
         value={filters.dateTo ?? ''}
         onChange={(e) => update('dateTo', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       />
 
       <TextField
@@ -144,7 +144,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         type="number"
         value={filters.minAmount ?? ''}
         onChange={(e) => update('minAmount', e.target.value || undefined)}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+        sx={fieldSx}
       />
 
       <Box sx={{ display: 'flex', gap: 1.25 }}>
@@ -154,25 +154,22 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
           type="number"
           value={filters.maxAmount ?? ''}
           onChange={(e) => update('maxAmount', e.target.value || undefined)}
-          sx={{ flexGrow: 1, '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+          sx={{ flexGrow: 1, ...fieldSx }}
         />
         <Button
-          variant="outlined"
-          startIcon={<FilterListIcon />}
+          size="small"
           onClick={handleReset}
           disabled={!hasActiveFilters}
           sx={{
-            borderRadius: 2.5,
-            px: 2,
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            letterSpacing: '0.06em',
+            px: 1.5,
+            minWidth: 0,
             whiteSpace: 'nowrap',
-            color: hasActiveFilters ? 'text.primary' : 'text.disabled',
-            borderColor: (t) =>
-              hasActiveFilters
-                ? alpha(t.palette.primary.main, 0.5)
-                : alpha(t.palette.text.secondary, 0.25),
           }}
         >
-          Reset
+          CLR
         </Button>
       </Box>
     </Box>

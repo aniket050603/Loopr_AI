@@ -4,11 +4,38 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
-import { alpha, useTheme } from '@mui/material/styles';
+import Divider from '@mui/material/Divider';
+import { useTheme } from '@mui/material/styles';
+import { FONT_DISPLAY, FONT_MONO } from '../theme/theme';
+import { usePalette } from '../theme/ThemeModeProvider';
+import { useLedgerMode } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
+
+function ModeToggle() {
+  const { mode, toggle } = useLedgerMode();
+  const palette = usePalette();
+  return (
+    <Button
+      onClick={toggle}
+      aria-label="Toggle color mode"
+      sx={{
+        minWidth: 0,
+        px: 1.25,
+        py: 0.5,
+        fontFamily: FONT_MONO,
+        fontSize: 11,
+        letterSpacing: '0.1em',
+        color: 'text.secondary',
+        border: `1px solid ${palette.border}`,
+        borderRadius: 999,
+        '&:hover': { color: 'text.primary', borderColor: palette.borderStrong },
+      }}
+    >
+      {mode === 'light' ? 'NIGHT' : 'DAY'}
+    </Button>
+  );
+}
 
 export default function LoginPage() {
   const { login, user } = useAuth();
@@ -39,160 +66,183 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-        position: 'relative',
-        overflow: 'hidden',
-        background:
-          'radial-gradient(1200px 800px at 85% -10%, rgba(99,102,241,0.18), transparent 60%), radial-gradient(900px 700px at -10% 110%, rgba(34,211,238,0.12), transparent 55%), #070B14',
-      }}
-    >
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          width: 560,
-          height: 560,
-          borderRadius: '50%',
-          top: -220,
-          right: -140,
-          background: 'radial-gradient(circle, rgba(99,102,241,0.35), transparent 65%)',
-          filter: 'blur(60px)',
-          pointerEvents: 'none',
-        }}
-      />
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          width: 460,
-          height: 460,
-          borderRadius: '50%',
-          bottom: -200,
-          left: -120,
-          background: 'radial-gradient(circle, rgba(34,211,238,0.22), transparent 65%)',
-          filter: 'blur(60px)',
-          pointerEvents: 'none',
-        }}
-      />
+  const rule = theme.palette.divider;
 
-      <Paper
-        elevation={0}
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      {/* Top bar */}
+      <Box
         sx={{
-          p: { xs: 3, md: 5 },
-          width: '100%',
-          maxWidth: 440,
-          borderRadius: 4,
-          position: 'relative',
-          bgcolor: 'rgba(14,21,38,0.7)',
-          backdropFilter: 'blur(18px)',
-          border: '1px solid rgba(148,163,184,0.14)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          px: { xs: 2.5, sm: 5 },
+          py: 2,
+          borderBottom: `1px solid ${rule}`,
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              width: 60,
-              height: 60,
-              borderRadius: '18px',
-              display: 'grid',
-              placeItems: 'center',
-              mb: 1,
-              color: '#fff',
-              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 55%, #22D3EE 130%)',
-              boxShadow: '0 12px 32px rgba(99,102,241,0.45)',
-            }}
-          >
-            <KeyOutlinedIcon fontSize="large" />
-          </Box>
-          <Typography component="h1" variant="h5" fontWeight={800} letterSpacing="-0.02em">
-            Financial Analytics
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Sign in to view analytics and manage transactions
-          </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            letterSpacing: '0.14em',
+            color: 'text.secondary',
+          }}
+        >
+          FINANCIAL ANALYTICS
+        </Typography>
+        <ModeToggle />
+      </Box>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
-            <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-              autoComplete="email"
-            />
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-              autoComplete="current-password"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              size="large"
-              disabled={loading}
-              sx={{
-                mt: 3,
-                py: 1.4,
-                borderRadius: 2.5,
-                color: '#fff',
-                background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #22D3EE 140%)',
-                boxShadow: '0 12px 30px rgba(99,102,241,0.4)',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                '&:hover': {
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 16px 40px rgba(99,102,241,0.55)',
-                },
-                '&:disabled': {
-                  color: '#fff',
-                  opacity: 0.6,
-                },
-              }}
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </Box>
-
+      {/* Center */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1.15fr 1fr' },
+          alignItems: 'center',
+          gap: { xs: 4, md: 8 },
+          px: { xs: 2.5, sm: 5 },
+          py: { xs: 4, md: 6 },
+          maxWidth: 1080,
+          width: '100%',
+          mx: 'auto',
+        }}
+      >
+        {/* Masthead */}
+        <Box>
           <Typography
             variant="caption"
             sx={{
-              mt: 3,
-              px: 1.5,
-              py: 0.75,
-              borderRadius: 999,
-              color: 'text.secondary',
-              border: '1px dashed',
-              borderColor: (t) => alpha(t.palette.text.secondary, 0.3),
-              fontFamily: '"JetBrains Mono", monospace',
+              color: 'accent.main',
+              fontFamily: FONT_MONO,
               fontSize: 11,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
             }}
           >
-            demo@fin.com / demo1234
+            Transactions · Analytics · Ledger
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 600,
+              fontSize: { xs: 44, md: 58 },
+              lineHeight: 1.02,
+              letterSpacing: '-0.02em',
+              mt: 1.5,
+            }}
+          >
+            The Ledger.
+          </Typography>
+          <Typography sx={{ mt: 2, fontSize: 15.5, color: 'text.secondary', maxWidth: 380, lineHeight: 1.65 }}>
+            A quiet, precise view of revenue and expense — filterable, sortable, and exportable
+            down to the last cent.
+          </Typography>
+          <Divider sx={{ my: 3, borderColor: rule }} />
+          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {[
+              ['300', 'records'],
+              ['4', 'users'],
+              ['12', 'months'],
+            ].map(([v, l]) => (
+              <Box key={l}>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 600 }}>
+                  {v}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                >
+                  {l}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Form */}
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            bgcolor: 'background.paper',
+            border: `1px solid ${rule}`,
+            borderRadius: '10px',
+            p: { xs: 3, md: 4 },
+          }}
+        >
+          <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600 }}>
+            Sign in
+          </Typography>
+          <Typography sx={{ mt: 0.5, fontSize: 13.5, color: 'text.secondary' }}>
+            Use the demo credentials below.
+          </Typography>
+
+          <TextField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            margin="normal"
+            required
+            autoComplete="email"
+          />
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            fullWidth
+            margin="normal"
+            required
+            autoComplete="current-password"
+          />
+
+          <Button
+            type="submit"
+            fullWidth
+            size="large"
+            disabled={loading}
+            sx={{ mt: 2.5, py: 1.3, borderRadius: '6px' }}
+          >
+            {loading ? 'Signing in…' : 'Enter the ledger'}
+          </Button>
+
+          <Typography
+            sx={{
+              mt: 2.5,
+              pt: 2,
+              borderTop: `1px solid ${rule}`,
+              fontFamily: FONT_MONO,
+              fontSize: 11.5,
+              color: 'text.secondary',
+              textAlign: 'center',
+            }}
+          >
+            demo@fin.com · demo1234
           </Typography>
         </Box>
-      </Paper>
+      </Box>
 
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ position: 'absolute', bottom: 16, opacity: 0.6 }}
+      {/* Footer line */}
+      <Box
+        sx={{
+          px: { xs: 2.5, sm: 5 },
+          py: 2,
+          borderTop: `1px solid ${rule}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
       >
-        {theme.palette.mode === 'dark' ? 'Secure · JWT authenticated' : ''}
-      </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          © {new Date().getFullYear()} Loopr
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          JWT · MongoDB · React
+        </Typography>
+      </Box>
     </Box>
   );
 }

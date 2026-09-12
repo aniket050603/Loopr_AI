@@ -1,10 +1,12 @@
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
+import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,182 +18,175 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { FONT_MONO, getPalette, type LedgerMode } from '../theme/theme';
+import { useLedgerMode } from '../theme/ThemeModeProvider';
+import { SectionHeader } from './ledger';
 import type { SummaryResponse } from '../types';
 
-const REVENUE = '#34D399';
-const EXPENSE = '#F87171';
-const STATUS_PAID = '#6366F1';
-const STATUS_PENDING = '#FBBF24';
+function useChartTheme(mode: LedgerMode) {
+  const p = getPalette(mode);
+  return {
+    ink: p.text,
+    muted: p.muted,
+    grid: p.grid,
+    tipBg: p.chartTip,
+    tipBorder: p.borderStrong,
+    revenue: p.up,
+    expense: p.down,
+    paid: p.accent,
+    pending: p.warn,
+  };
+}
 
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
-
-function ChartTooltip() {
+function ChartTooltip({ mode }: { mode: LedgerMode }) {
+  const t = useChartTheme(mode);
   return (
     <Tooltip
-      cursor={{ stroke: 'rgba(148,163,184,0.35)', strokeWidth: 1 }}
+      cursor={{ stroke: t.muted, strokeWidth: 1, strokeDasharray: '2 3' }}
       contentStyle={{
-        backgroundColor: '#0B1120',
-        border: '1px solid rgba(148,163,184,0.2)',
-        borderRadius: 12,
-        boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
-        fontSize: 13,
-        fontWeight: 500,
+        backgroundColor: t.tipBg,
+        border: `1px solid ${t.tipBorder}`,
+        borderRadius: 8,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+        fontSize: 12.5,
+        fontFamily: FONT_MONO,
       }}
-      labelStyle={{ color: '#F1F5F9', fontWeight: 700, marginBottom: 4 }}
-      itemStyle={{ color: '#8B98B4' }}
-      formatter={(value: number) => [currency.format(value), undefined]}
+      labelStyle={{ color: t.ink, fontWeight: 600, marginBottom: 4 }}
+      itemStyle={{ color: t.muted }}
+      formatter={(value: number) => [
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value),
+        undefined,
+      ]}
     />
   );
 }
 
-function LegendChip() {
+function LegendInline() {
   return (
     <Legend
-      iconType="circle"
-      iconSize={8}
-      wrapperStyle={{ fontSize: 12.5, color: '#8B98B4', paddingTop: 8 }}
+      iconType="plainline"
+      iconSize={14}
+      wrapperStyle={{ fontSize: 12, paddingTop: 6 }}
     />
-  );
-}
-
-function ChartCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-      <Box sx={{ p: { xs: 2, md: 2.5 } }}>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-          {title}
-        </Typography>
-        {children}
-      </Box>
-    </Card>
   );
 }
 
 export default function Charts({ summary }: { summary: SummaryResponse }) {
+  useTheme();
+  const { mode } = useLedgerMode();
+  const isMdUp = useMediaQuery('(min-width:900px)');
+  const t = useChartTheme(mode);
   const { monthlyTrend, categoryBreakdown, statusBreakdown } = summary;
 
   return (
-    <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' } }}>
-      <ChartCard title="Revenue vs Expenses (Monthly)">
-        <ResponsiveContainer width="100%" height={290}>
-          <AreaChart data={monthlyTrend} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={REVENUE} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={REVENUE} stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="expFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={EXPENSE} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={EXPENSE} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="rgba(148,163,184,0.10)" vertical={false} />
+    <Box>
+      <SectionHeader index="02" title="Charts" meta="monthly & categorical" />
+
+      {/* Trend */}
+      <Paper elevation={0} sx={{ borderRadius: '10px', p: { xs: 2, md: 2.5 }, mb: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Revenue vs Expenses — monthly
+        </Typography>
+        <ResponsiveContainer width="100%" height={isMdUp ? 280 : 210}>
+          <LineChart data={monthlyTrend} margin={{ top: 10, right: 6, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke={t.grid} vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 12, fill: '#8B98B4' }}
-              axisLine={false}
+              tick={{ fontSize: 11, fill: t.muted, fontFamily: FONT_MONO }}
+              axisLine={{ stroke: t.grid }}
               tickLine={false}
               dy={6}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: '#8B98B4' }}
-              tickFormatter={(v) => currency.format(v)}
-              width={76}
+              tick={{ fontSize: 11, fill: t.muted, fontFamily: FONT_MONO }}
+              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              width={54}
               axisLine={false}
               tickLine={false}
             />
-            {ChartTooltip()}
-            {LegendChip()}
-            <Area
+            {ChartTooltip({ mode })}
+            {LegendInline()}
+            <Line
               type="monotone"
               dataKey="Revenue"
-              stroke={REVENUE}
-              strokeWidth={2.5}
-              fill="url(#revFill)"
+              stroke={t.revenue}
+              strokeWidth={1.75}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: '#0B1120' }}
+              activeDot={{ r: 3 }}
             />
-            <Area
+            <Line
               type="monotone"
               dataKey="Expense"
-              stroke={EXPENSE}
-              strokeWidth={2.5}
-              fill="url(#expFill)"
+              stroke={t.expense}
+              strokeWidth={1.75}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: '#0B1120' }}
+              activeDot={{ r: 3 }}
             />
-          </AreaChart>
+          </LineChart>
         </ResponsiveContainer>
-      </ChartCard>
+      </Paper>
 
-      <Box sx={{ display: 'grid', gap: 2, alignContent: 'start' }}>
-        <ChartCard title="Category Breakdown">
-          <ResponsiveContainer width="100%" height={185}>
+      {/* Breakdowns */}
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1.4fr' } }}>
+        <Paper elevation={0} sx={{ borderRadius: '10px', p: { xs: 2, md: 2.5 } }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Category split
+          </Typography>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={categoryBreakdown}
                 dataKey="total"
                 nameKey="category"
-                innerRadius={50}
-                outerRadius={72}
-                paddingAngle={3}
-                cornerRadius={4}
+                innerRadius={55}
+                outerRadius={80}
+                paddingAngle={2}
                 stroke="none"
               >
                 {categoryBreakdown.map((entry) => (
-                  <Cell
-                    key={entry.category}
-                    fill={entry.category === 'Revenue' ? REVENUE : EXPENSE}
-                  />
+                  <Cell key={entry.category} fill={entry.category === 'Revenue' ? t.revenue : t.expense} />
                 ))}
               </Pie>
-              {ChartTooltip()}
-              {LegendChip()}
+              {ChartTooltip({ mode })}
+              {LegendInline()}
             </PieChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </Paper>
 
-        <ChartCard title="Status Breakdown">
-          <ResponsiveContainer width="100%" height={185}>
-            <BarChart data={statusBreakdown} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="rgba(148,163,184,0.10)" vertical={false} />
+        <Paper elevation={0} sx={{ borderRadius: '10px', p: { xs: 2, md: 2.5 } }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Status volume
+          </Typography>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={statusBreakdown} margin={{ top: 10, right: 6, bottom: 0, left: 0 }}>
+              <CartesianGrid stroke={t.grid} vertical={false} />
               <XAxis
                 dataKey="status"
-                tick={{ fontSize: 12, fill: '#8B98B4' }}
-                axisLine={false}
+                tick={{ fontSize: 11, fill: t.muted, fontFamily: FONT_MONO }}
+                axisLine={{ stroke: t.grid }}
                 tickLine={false}
                 dy={6}
               />
               <YAxis
-                tick={{ fontSize: 12, fill: '#8B98B4' }}
-                tickFormatter={(v) => currency.format(v)}
-                width={76}
+                tick={{ fontSize: 11, fill: t.muted, fontFamily: FONT_MONO }}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                width={54}
                 axisLine={false}
                 tickLine={false}
               />
-              {ChartTooltip()}
-              <Bar dataKey="total" radius={[7, 7, 2, 2]} maxBarSize={56}>
+              {ChartTooltip({ mode })}
+              <Bar dataKey="total" maxBarSize={44} radius={[3, 3, 0, 0]}>
                 {statusBreakdown.map((entry) => (
                   <Cell
                     key={entry.status}
-                    fill={entry.status === 'Paid' ? STATUS_PAID : STATUS_PENDING}
+                    fill={entry.status === 'Paid' ? t.paid : t.pending}
                   />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </ChartCard>
-      </Box>
+        </Paper>
+        </Box>
     </Box>
   );
 }

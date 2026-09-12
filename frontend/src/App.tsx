@@ -18,7 +18,10 @@ export default function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Container maxWidth="xl" sx={{ py: 3 }}>
+            <Container
+              maxWidth="lg"
+              sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, md: 4 }, maxWidth: 1200 }}
+            >
               <DashboardPage />
             </Container>
           </ProtectedRoute>

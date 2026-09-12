@@ -9,8 +9,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import DownloadIcon from '@mui/icons-material/Download';
-import { alpha } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
+import { FONT_DISPLAY, FONT_MONO } from '../theme/theme';
+import { usePalette } from '../theme/ThemeModeProvider';
 import { api } from '../api/client';
 import { showAlert } from './SnackbarHost';
 import { TRANSACTION_FIELDS, type TransactionField } from '../types';
@@ -22,7 +23,7 @@ interface ExportModalProps {
 }
 
 const LABELS: Record<TransactionField, string> = {
-  id: 'ID',
+  id: 'No.',
   date: 'Date',
   amount: 'Amount',
   category: 'Category',
@@ -32,6 +33,8 @@ const LABELS: Record<TransactionField, string> = {
 };
 
 export default function ExportModal({ open, onClose, queryString }: ExportModalProps) {
+  const theme = useTheme();
+  const palette = usePalette();
   const [selected, setSelected] = useState<Set<TransactionField>>(
     () => new Set(TRANSACTION_FIELDS),
   );
@@ -91,34 +94,28 @@ export default function ExportModal({ open, onClose, queryString }: ExportModalP
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 4,
-          bgcolor: 'rgba(14,21,38,0.92)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(148,163,184,0.16)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.55)',
+          borderRadius: '10px',
+          bgcolor: 'background.paper',
+          border: `1px solid ${palette.borderStrong}`,
         },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="subtitle1" component="div" fontWeight={800} letterSpacing="-0.01em">
+        <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 600 }}>
           Export CSV
         </Typography>
-        <Typography variant="caption" component="div" color="text.secondary">
-          Columns + current filters &amp; sorting are applied
+        <Typography sx={{ fontFamily: FONT_MONO, fontSize: 11.5, color: 'text.secondary', mt: 0.5 }}>
+          Columns + current filters &amp; sorting apply
         </Typography>
       </DialogTitle>
       <DialogContent dividers sx={{ borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
           <Button
             size="small"
-            onClick={() =>
-              setSelected(
-                allSelected ? new Set() : new Set(TRANSACTION_FIELDS),
-              )
-            }
-            sx={{ fontSize: 12 }}
+            onClick={() => setSelected(allSelected ? new Set() : new Set(TRANSACTION_FIELDS))}
+            sx={{ fontFamily: FONT_MONO, fontSize: 11, minWidth: 0 }}
           >
-            {allSelected ? 'Deselect all' : 'Select all'}
+            {allSelected ? 'CLEAR' : 'ALL'}
           </Button>
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25 }}>
@@ -130,10 +127,10 @@ export default function ExportModal({ open, onClose, queryString }: ExportModalP
                 sx={{
                   mx: -0.5,
                   px: 1,
-                  py: 0.4,
-                  borderRadius: 2,
-                  transition: 'background-color 0.15s ease',
-                  '&:hover': { bgcolor: 'rgba(148,163,184,0.07)' },
+                  py: 0.5,
+                  borderRadius: 1.5,
+                  transition: 'background-color 0.12s ease',
+                  '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.04) },
                 }}
                 control={
                   <Checkbox
@@ -142,43 +139,33 @@ export default function ExportModal({ open, onClose, queryString }: ExportModalP
                     size="small"
                     sx={{
                       color: 'text.secondary',
-                      '&.Mui-checked': { color: 'primary.light' },
+                      '&.Mui-checked': { color: 'primary.main' },
                     }}
                   />
                 }
                 label={
-                  <Typography variant="body2" sx={{ fontSize: 13.5 }}>
-                    {LABELS[field]}
-                  </Typography>
+                  <Typography sx={{ fontSize: 13.5 }}>{LABELS[field]}</Typography>
                 }
               />
             );
           })}
         </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
-          {selected.size} of {TRANSACTION_FIELDS.length} columns selected
+        <Typography sx={{ fontFamily: FONT_MONO, fontSize: 11, color: 'text.secondary', mt: 1.5 }}>
+          {selected.size} / {TRANSACTION_FIELDS.length} columns
         </Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
-        <Button onClick={onClose} color="inherit" sx={{ borderRadius: 2.5 }}>
+        <Button onClick={onClose} color="inherit" sx={{ borderRadius: '6px' }}>
           Cancel
         </Button>
         <Button
           onClick={handleExport}
           variant="contained"
-          startIcon={
-            loading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />
-          }
+          startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
           disabled={selected.size === 0 || loading}
-          sx={{
-            borderRadius: 2.5,
-            color: '#fff',
-            background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #22D3EE 140%)',
-            boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
-            '&:disabled': { color: '#fff', opacity: 0.6 },
-          }}
+          sx={{ borderRadius: '6px', px: 2.5 }}
         >
-          {loading ? 'Exporting…' : 'Export CSV'}
+          {loading ? 'Exporting…' : 'Export'}
         </Button>
       </DialogActions>
     </Dialog>
