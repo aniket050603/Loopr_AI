@@ -72,6 +72,7 @@ export const FONT_MONO = '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, 
 export const FONT_UI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 export const SIDEBAR_WIDTH = 248;
+export const SIDEBAR_COLLAPSED_WIDTH = 72;
 
 export function buildTheme(mode: LedgerMode) {
   const p = getPalette(mode);

@@ -10,6 +10,7 @@ import { FONT_DISPLAY, FONT_MONO, getPalette, type BrutalPalette } from '../them
 import { useLedgerMode, usePalette } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
+import { LooprMark } from '../components/brand';
 
 function ModeToggle() {
   const { mode, toggle } = useLedgerMode();
@@ -109,7 +110,7 @@ function OrbitMark({ p }: { p: BrutalPalette }) {
   );
 }
 
-/** Slow-drifting aurora blobs rendered behind the sign-in form. */
+/** Slow-drifting aurora blobs. confined to their panel via the parent's overflow: hidden. */
 function Aurora() {
   const blobs = [
     { color: 'rgba(34,197,94,0.16)', size: 420, top: '-12%', left: '-10%', delay: '0s' },
@@ -185,168 +186,179 @@ export default function LoginPage() {
   const rule = theme.palette.divider;
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+        bgcolor: 'background.default',
+      }}
+    >
+      {/* LEFT: brand panel — no header bar; brand + toggle live inside the split */}
       <Box
         sx={{
-          display: 'flex',
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          px: { xs: 2.5, md: 5 },
-          py: 1.75,
-          borderBottom: `1px solid ${rule}`,
+          bgcolor: ink.ink,
+          color: ink.inkText,
+          p: { md: 4, lg: 6 },
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box
-            sx={{
-              width: 24,
-              height: 24,
-              borderRadius: '6px',
-              bgcolor: ink.ink,
-              color: ink.inkText,
-              display: 'grid',
-              placeItems: 'center',
-              fontFamily: FONT_DISPLAY,
-              fontSize: 14,
-              fontWeight: 700,
-              lineHeight: 1,
-              pb: '2px',
-            }}
-          >
-            L
-          </Box>
-          <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 15.5, fontWeight: 600 }}>
-            Loopr
-          </Typography>
-        </Box>
-        <ModeToggle />
-      </Box>
+        <Aurora />
 
-      <Box
-        sx={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '1.05fr 1fr' },
-        }}
-      >
-        {/* Brand panel */}
+        {/* Panel-internal brand row */}
         <Box
           sx={{
-            display: { xs: 'none', md: 'flex' },
-            flexDirection: 'column',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            bgcolor: ink.ink,
-            color: ink.inkText,
-            p: { md: 5, lg: 6 },
             position: 'relative',
-            overflow: 'hidden',
           }}
         >
-          <Aurora />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <LooprMark size={26} />
+            <Typography
+              sx={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: ink.inkText }}
+            >
+              Loopr
+            </Typography>
+          </Box>
           <Typography
             sx={{
               fontFamily: FONT_MONO,
               fontSize: 11,
               letterSpacing: '0.18em',
-              opacity: 0.6,
-              position: 'relative',
+              opacity: 0.55,
             }}
           >
             FINANCIAL ANALYTICS · FY 2024
           </Typography>
-
-          <Box sx={{ position: 'relative' }}>
-            <OrbitMark p={ink} />
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 600,
-                fontSize: { md: 52, lg: 62 },
-                lineHeight: 1.02,
-                letterSpacing: '-0.02em',
-                mt: 4,
-              }}
-            >
-              Every cent,
-              <br />
-              on the record.
-            </Typography>
-            <Typography sx={{ mt: 3, fontSize: 15, lineHeight: 1.7, opacity: 0.72, maxWidth: 420 }}>
-              A precise ledger of revenue and expense — filter it, sort it, search it, and take
-              exactly the columns you need as CSV.
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: { md: 4, lg: 6 }, flexWrap: 'wrap', position: 'relative' }}>
-            {[
-              ['300', 'records'],
-              ['4', 'users'],
-              ['12', 'months'],
-              ['CSV', 'export'],
-            ].map(([v, l]) => (
-              <Box key={l}>
-                <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 600 }}>
-                  {v}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: 10.5,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    opacity: 0.55,
-                    mt: 0.25,
-                  }}
-                >
-                  {l}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
         </Box>
 
-        {/* Form panel */}
+        <Box sx={{ position: 'relative' }}>
+          <OrbitMark p={ink} />
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 600,
+              fontSize: { md: 48, lg: 60 },
+              lineHeight: 1.02,
+              letterSpacing: '-0.02em',
+              mt: 4,
+            }}
+          >
+            Every cent,
+            <br />
+            on the record.
+          </Typography>
+          <Typography sx={{ mt: 3, fontSize: 15, lineHeight: 1.7, opacity: 0.72, maxWidth: 420 }}>
+            A precise ledger of revenue and expense — filter it, sort it, search it, and take
+            exactly the columns you need as CSV.
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: { md: 4, lg: 6 }, flexWrap: 'wrap', position: 'relative' }}>
+          {[
+            ['300', 'records'],
+            ['4', 'users'],
+            ['12', 'months'],
+            ['CSV', 'export'],
+          ].map(([v, l]) => (
+            <Box key={l}>
+              <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 600 }}>
+                {v}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 10.5,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  opacity: 0.55,
+                  mt: 0.25,
+                }}
+              >
+                {l}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* RIGHT: form panel — no footer bar; copyright sits quietly at the bottom */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Aurora />
+
+        {/* Panel-internal utility row — theme toggle only on mobile (desktop has it on the left panel) */}
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            px: { xs: 2.5, sm: 6, md: 5, lg: 7 },
-            py: { xs: 4, md: 6 },
+            justifyContent: 'flex-end',
+            px: { xs: 2.5, md: 4, lg: 5 },
+            pt: { xs: 2, md: 3 },
             position: 'relative',
           }}
         >
-          <Aurora />
+          {isDesktop ? null : <ModeToggle />}
+        </Box>
+
+        {/* Centered form */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            px: { xs: 2.5, sm: 6, md: 5, lg: 7 },
+            py: { xs: 4, md: 4 },
+            position: 'relative',
+          }}
+        >
           <Box
             sx={{
               width: '100%',
               maxWidth: 400,
-              mx: 'auto',
               position: 'relative',
               borderRadius: '16px',
-              // Glass card: subtle frost over the aurora
               bgcolor: mode === 'light' ? 'rgba(255,255,255,0.72)' : 'rgba(15,18,25,0.72)',
               backdropFilter: 'blur(14px)',
               border: `1px solid ${rule}`,
               boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
               px: { xs: 2.5, sm: 4 },
               py: { xs: 3.5, sm: 4.5 },
-              my: { xs: 2, md: 0 },
             }}
           >
-            <Typography
-              sx={{
-                display: { md: 'none' },
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 600,
-                fontSize: 34,
-                lineHeight: 1.05,
-                letterSpacing: '-0.02em',
-                mb: 1,
-              }}
-            >
-              Every cent, on the record.
-            </Typography>
+            {/* Mobile-only compact headline (left panel is hidden) */}
+            <Box sx={{ display: { md: 'none' }, mb: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}>
+                <LooprMark size={24} />
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700 }}>
+                  Loopr
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 600,
+                  fontSize: 30,
+                  lineHeight: 1.08,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Every cent, on the record.
+              </Typography>
+            </Box>
 
             <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600 }}>
               Sign in
@@ -417,23 +429,24 @@ export default function LoginPage() {
             </Button>
           </Box>
         </Box>
-      </Box>
 
-      <Box
-        sx={{
-          px: { xs: 2.5, md: 5 },
-          py: 1.75,
-          borderTop: `1px solid ${rule}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          © {new Date().getFullYear()} Loopr
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          JWT · MongoDB · React
-        </Typography>
+        {/* Quiet footer inside the panel — no border, blends in */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            px: { xs: 2.5, md: 4, lg: 5 },
+            pb: { xs: 2, md: 3 },
+            position: 'relative',
+          }}
+        >
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            © {new Date().getFullYear()} Loopr
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            JWT · MongoDB · React
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );

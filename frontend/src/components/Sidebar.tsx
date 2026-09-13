@@ -1,13 +1,19 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { LayoutGrid, ArrowLeftRight, BarChart3 } from 'lucide-react';
+import { Box, List, ListItemButton, ListItemIcon, ListItemText, Tooltip, Typography } from '@mui/material';
+import { LayoutGrid, ArrowLeftRight, BarChart3, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { SIDEBAR_WIDTH, getPalette, type BrutalPalette, FONT_DISPLAY, FONT_UI } from '../theme/theme';
+import {
+  SIDEBAR_WIDTH,
+  SIDEBAR_COLLAPSED_WIDTH,
+  getPalette,
+  FONT_DISPLAY,
+  FONT_UI,
+} from '../theme/theme';
 import { useLedgerMode } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
-import { LooprWordmark } from './brand';
+import { LooprWordmark, LooprMark } from './brand';
 
 export const NAV = [
   { label: 'Dashboard', icon: LayoutGrid, target: 'overview' },
@@ -15,7 +21,13 @@ export const NAV = [
   { label: 'Transactions', icon: ArrowLeftRight, target: 'transactions' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}
+
+/** Sidebar jump-to-section navigation. Collapses to an icon rail on desktop. */
+export default function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { mode } = useLedgerMode();
   const p = getPalette(mode);
   const theme = useTheme();
@@ -25,6 +37,13 @@ export default function Sidebar() {
   const navigate = useNavigate();
   if (!isDesktop) return null;
 
+  const jump = (target: string) => {
+    navigate(`/#${target}`);
+    requestAnimationFrame(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   return (
     <Box
       component="nav"
@@ -33,106 +52,145 @@ export default function Sidebar() {
         left: 0,
         top: 0,
         bottom: 0,
-        width: SIDEBAR_WIDTH,
+        width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
+        transition: 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
         bgcolor: p.panel,
         borderRight: `1px solid ${p.edge}`,
         display: 'flex',
         flexDirection: 'column',
         zIndex: 1100,
+        overflow: 'hidden',
       }}
     >
-      {/* Brand */}
+      {/* Brand row — collapse handle floats on the rail edge, revealed on hover */}
       <Box
         sx={{
-          px: 2,
-          py: 1.75,
+          position: 'relative',
+          height: 58,
+          flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.25,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          px: collapsed ? 0 : 2,
         }}
       >
-        <LooprWordmark />
+        {collapsed ? <LooprMark size={32} /> : <LooprWordmark />}
+        <Box
+          component="button"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            right: collapsed ? -12 : 12,
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            bgcolor: p.paper,
+            border: `1px solid ${p.edge}`,
+            color: p.muted,
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'pointer',
+            opacity: 0,
+            transition: 'opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease',
+            '&:hover': { color: p.text, borderColor: p.green },
+            /* reveal whenever the cursor is anywhere on the rail */
+            'nav:hover &': { opacity: 1 },
+          }}
+        >
+          {collapsed ? <ChevronsRight size={13} /> : <ChevronsLeft size={13} />}
+        </Box>
       </Box>
 
-      <Box sx={{ px: 1 }} />
-
       {/* Nav */}
-      <List sx={{ px: 1, mx: 'auto', mb: 2 }} disablePadding>
+      <List sx={{ px: 1, mb: 2 }} disablePadding>
         {NAV.map((item) => {
           const active = hash === `#${item.target}`;
           const Icon = item.icon;
           return (
-            <ListItemButton
+            <Tooltip
               key={item.label}
-              component={RRNavLink}
-              to={`#${item.target}`}
-              onClick={() => {
-                navigate(`/#${item.target}`);
-                requestAnimationFrame(() => {
-                  document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-              }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                width: '100%',
-                py: 1.5,
-                px: 2,
-                borderRadius: '4px',
-                textAlign: 'left',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                bgcolor: active ? p.panelAlt : p.panel,
-                transition: 'background-color 180ms ease, transform 150ms ease, border-color 180ms ease',
-                '&:hover': {
-                  bgcolor: active ? p.panelAlt : p.panelAlt,
-                  transform: 'translateX(1px)',
-                },
-                borderRight: active ? `3px solid ${p.green}` : '3px solid transparent',
-                '& .MuiListItemIcon-root': {
-                  minWidth: 28,
-                  color: active ? p.green : p.muted,
-                  transition: 'color 150ms ease',
-                },
-                '& .MuiListItemText-primary': {
-                  color: active ? p.green : p.text,
-                  fontWeight: active ? 800 : 500,
-                  letterSpacing: '0.01em',
-                  fontFamily: FONT_UI,
-                  fontSize: 14,
-                  transition: 'color 150ms ease',
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                  bgcolor: p.panelAlt,
-                },
-              }}
+              title={item.label}
+              placement="right"
+              disableHoverListener={!collapsed}
+              disableFocusListener
+              disableTouchListener
             >
-              <ListItemIcon>
-                <Icon size={20} strokeWidth={1.75} />
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+              <ListItemButton
+                component={RRNavLink}
+                to={`#${item.target}`}
+                onClick={() => jump(item.target)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  width: '100%',
+                  py: 1.5,
+                  px: collapsed ? 0 : 2,
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  minHeight: 48,
+                  borderRadius: '4px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  bgcolor: active ? p.panelAlt : p.panel,
+                  transition: 'background-color 180ms ease, transform 150ms ease',
+                  '&:hover': {
+                    bgcolor: p.panelAlt,
+                    transform: 'translateX(1px)',
+                  },
+                  borderRight: active ? `3px solid ${p.green}` : '3px solid transparent',
+                  '& .MuiListItemIcon-root': {
+                    minWidth: 28,
+                    color: active ? p.green : p.muted,
+                    transition: 'color 150ms ease',
+                  },
+                  '& .MuiListItemText-primary': {
+                    color: active ? p.green : p.text,
+                    fontWeight: active ? 800 : 500,
+                    letterSpacing: '0.01em',
+                    fontFamily: FONT_UI,
+                    fontSize: 14,
+                    whiteSpace: 'nowrap',
+                    transition: 'color 150ms ease',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.98)',
+                    bgcolor: p.panelAlt,
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <Icon size={20} strokeWidth={1.75} />
+                </ListItemIcon>
+                {!collapsed && <ListItemText primary={item.label} />}
+              </ListItemButton>
+            </Tooltip>
           );
         })}
       </List>
 
-      {/* Footer segment */}
+      {/* Footer segment — avatar always; name/email only when expanded */}
       <Box
         sx={{
           borderTop: `1px solid ${p.edge}`,
           marginTop: 'auto',
-          padding: '14px 16px',
+          padding: collapsed ? '14px 0' : '14px 16px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
           gap: 1.75,
+          flexShrink: 0,
+          transition: 'padding 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <Box
+          title={user?.email ?? ''}
           sx={{
             width: 40,
             height: 40,
+            flexShrink: 0,
             borderRadius: '50%',
             bgcolor: p.green,
             display: 'grid',
@@ -145,18 +203,20 @@ export default function Sidebar() {
         >
           {(user?.name ?? user?.email ?? 'U').slice(0, 1).toUpperCase()}
         </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{ color: p.text, fontWeight: 700, fontSize: 13.5, display: 'block', fontFamily: FONT_UI, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-          >
-            {user?.name ?? 'User'}
-          </Typography>
-          <Typography
-            sx={{ color: p.muted, fontSize: 11, display: 'block', fontFamily: FONT_UI, letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-          >
-            {user?.email ?? ''}
-          </Typography>
-        </Box>
+        {!collapsed && (
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{ color: p.text, fontWeight: 700, fontSize: 13.5, display: 'block', fontFamily: FONT_UI, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {user?.name ?? 'User'}
+            </Typography>
+            <Typography
+              sx={{ color: p.muted, fontSize: 11, display: 'block', fontFamily: FONT_UI, letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {user?.email ?? ''}
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Box>
   );

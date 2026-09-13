@@ -5,7 +5,7 @@ import { FONT_DISPLAY } from '../theme/theme';
  * Loopr orbit mark: an open ring (the "loop") with a small dot riding it.
  * Pure SVG so it scales crisply at both sidebar and drawer sizes.
  */
-function LooprMark({ size }: { size: number }) {
+export function LooprMark({ size = 34 }: { size?: number }) {
   return (
     <Box
       sx={{
@@ -40,7 +40,7 @@ function LooprMark({ size }: { size: number }) {
 }
 
 /** Sidebar / drawer wordmark: mark + "Loopr". */
-export function LooprWordmark({ size = 'md' }: { size?: 'sm' | 'md' }) {
+export function LooprWordmark({ size = 'md', color = '#F5F6F8' }: { size?: 'sm' | 'md'; color?: string }) {
   const markSize = size === 'sm' ? 30 : 34;
   const labelSize = size === 'sm' ? 16 : 18;
   return (
@@ -52,7 +52,7 @@ export function LooprWordmark({ size = 'md' }: { size?: 'sm' | 'md' }) {
           fontWeight: 800,
           fontSize: labelSize,
           letterSpacing: '-0.02em',
-          color: '#F5F6F8',
+          color,
           userSelect: 'text',
           lineHeight: 1,
         }}

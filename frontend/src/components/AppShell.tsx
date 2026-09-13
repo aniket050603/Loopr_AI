@@ -1,5 +1,4 @@
-import { useState, type ReactNode } from 'react';
-import Box from '@mui/material/Box';
+import { useState, type ReactNode } from 'react';import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -8,7 +7,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { alpha, useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
-import { SIDEBAR_WIDTH, getPalette, FONT_UI } from '../theme/theme';
+import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, getPalette, FONT_UI } from '../theme/theme';
 import { useLedgerMode, usePalette } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
 import Sidebar, { NAV } from './Sidebar';
@@ -46,6 +45,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('loopr-sidebar-collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem('loopr-sidebar-collapsed', c ? '0' : '1');
+      } catch { /* private mode */ }
+      return !c;
+      });
+  };
 
   const jumpTo = (target: string) => {
     navigate(`/#${target}`);
@@ -94,9 +109,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     </List>
   );
 
+  const railWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: p.panel }}>
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
 
       <Box
         component="main"
@@ -105,7 +121,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
-          ml: { md: `${SIDEBAR_WIDTH}px` },
+          ml: { md: `${railWidth}px` },
+          transition: 'margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {/* Top bar */}
