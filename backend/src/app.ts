@@ -18,6 +18,25 @@ export function createApp() {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
 
+  // Friendly root so opening the bare URL in a browser self-explains the service.
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Loopr — Financial Analytics API',
+      status: 'ok',
+      docs: 'See /api below. All routes require a Bearer token except /health and /api/auth/login.',
+      endpoints: {
+        health: 'GET /health',
+        login: 'POST /api/auth/login',
+        register: 'POST /api/auth/register',
+        me: 'GET /api/auth/me',
+        transactions: 'GET /api/transactions?page=&limit=&sortBy=&sortDir=&category=&status=&search=&dateFrom=&dateTo=&minAmount=&maxAmount=',
+        summary: 'GET /api/transactions/summary',
+        exportCsv: 'POST /api/transactions/export/csv',
+      },
+      frontend: 'https://loopr-ai.vercel.app',
+    });
+  });
+
   app.use('/api/auth', authRoutes);
   app.use('/api/transactions', transactionRoutes);
 
