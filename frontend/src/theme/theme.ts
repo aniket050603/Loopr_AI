@@ -1,140 +1,161 @@
 import { createTheme } from '@mui/material/styles';
 
-export type LedgerMode = 'light' | 'dark';
-
-export interface Palette {
-  bg: string;
-  surface: string;
-  surfaceAlt: string;
+type BrutalPalette = {
+  /* surfaces */
+  panel: string;
+  panelAlt: string;
+  paper: string;
+  /* lines */
+  edge: string;
   border: string;
   borderStrong: string;
+  /* type */
   text: string;
-  ink: string;
-  inkHover: string;
-  inkText: string;
   muted: string;
-  faint: string;
-  accent: string;
-  accentInk: string;
-  up: string;
-  down: string;
-  warn: string;
-  grid: string;
-  chartTip: string;
-}
+  /* accents */
+  green: string;
+  amber: string;
+  red: string;
+  softGreen: string;
+  softAmber: string;
+  /* kept for LoginPage ink panel */
+  ink: string;
+  inkText: string;
+};
 
-const LIGHT: Palette = {
-  bg: '#F6F4EF',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EFEDE6',
-  border: '#E2DFD6',
-  borderStrong: '#D6D2C4',
-  text: '#191813',
-  ink: '#191813',
-  inkHover: '#33312A',
+export type LedgerMode = 'light' | 'dark';
+export type Palette = BrutalPalette;
+export type { BrutalPalette };
+
+export const BRUTAL: BrutalPalette = {
+  panel: '#0F1219',
+  panelAlt: '#181C27',
+  paper: '#161A24',
+  edge: '#2C3140',
+  border: '#2C3140',
+  borderStrong: '#3A4150',
+  text: '#F5F6F8',
+  muted: '#A0A7B5',
+  green: '#22C55E',
+  amber: '#EAB308',
+  red: '#EF4444',
+  softGreen: 'rgba(34,197,94,0.12)',
+  softAmber: 'rgba(234,179,8,0.12)',
+  ink: '#0B0F19',
   inkText: '#FFFFFF',
-  muted: '#6B675C',
-  faint: '#A8A399',
-  accent: '#0F7B5F',
-  accentInk: '#FFFFFF',
-  up: '#0F7B5F',
-  down: '#B3392E',
-  warn: '#946200',
-  grid: '#E9E6DE',
-  chartTip: '#FFFFFF',
 };
 
-const DARK: Palette = {
-  bg: '#131512',
-  surface: '#1A1C18',
-  surfaceAlt: '#22251F',
-  border: '#2C2F28',
-  borderStrong: '#3A3E35',
-  text: '#EDEBE3',
-  ink: '#EDEBE3',
-  inkHover: '#FFFFFF',
-  inkText: '#131512',
-  muted: '#9BA08F',
-  faint: '#6E7365',
-  accent: '#5BBFA0',
-  accentInk: '#10231C',
-  up: '#5BBFA0',
-  down: '#E07A6E',
-  warn: '#D9A94A',
-  grid: '#262922',
-  chartTip: '#1A1C18',
+const LIGHT: BrutalPalette = {
+  panel: '#F6F7F9',
+  panelAlt: '#ECEEF2',
+  paper: '#FFFFFF',
+  edge: '#DCE0E8',
+  border: '#DCE0E8',
+  borderStrong: '#C3C9D4',
+  text: '#14181F',
+  muted: '#5B6472',
+  green: '#16A34A',
+  amber: '#D97706',
+  red: '#DC2626',
+  softGreen: 'rgba(22,163,74,0.12)',
+  softAmber: 'rgba(217,119,6,0.12)',
+  ink: '#0B0F19',
+  inkText: '#FFFFFF',
 };
 
-export function getPalette(mode: LedgerMode): Palette {
-  return mode === 'dark' ? DARK : LIGHT;
+export function getPalette(mode: LedgerMode): BrutalPalette {
+  return mode === 'light' ? LIGHT : BRUTAL;
 }
 
 export const FONT_DISPLAY = '"Fraunces", Georgia, "Times New Roman", serif';
 export const FONT_MONO = '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
-export const FONT_UI =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+export const FONT_UI = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-export const SIDEBAR_WIDTH = 232;
+export const SIDEBAR_WIDTH = 248;
 
 export function buildTheme(mode: LedgerMode) {
   const p = getPalette(mode);
   return createTheme({
     palette: {
       mode,
-      primary: { main: p.accent, contrastText: p.accentInk },
-      success: { main: p.up },
-      error: { main: p.down },
-      warning: { main: p.warn },
-      background: { default: p.bg, paper: p.surface },
+      primary: {
+        main: p.green,
+        contrastText: mode === 'light' ? '#FFFFFF' : '#0B0F19',
+      },
+      background: { default: p.panel, paper: p.paper },
       text: { primary: p.text, secondary: p.muted },
-      divider: p.border,
+      divider: p.edge,
+      success: { main: p.green },
+      warning: { main: p.amber },
     },
-    shape: { borderRadius: 6 },
+    spacing: 8,
+    shape: { borderRadius: 12 },
     typography: {
       fontFamily: FONT_UI,
-      h4: { fontFamily: FONT_DISPLAY, fontWeight: 600, letterSpacing: '-0.01em' },
-      h5: { fontFamily: FONT_DISPLAY, fontWeight: 600, letterSpacing: '-0.01em' },
-      h6: { fontFamily: FONT_DISPLAY, fontWeight: 600 },
-      subtitle1: { fontWeight: 600 },
-      subtitle2: { fontWeight: 600 },
-      button: { textTransform: 'none', fontWeight: 600 },
-      caption: { fontFamily: FONT_MONO, letterSpacing: '0.04em' },
+      h6: { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 16, letterSpacing: '0.01em' },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
-          body: { backgroundColor: p.bg, scrollbarColor: `${p.borderStrong} transparent` },
-          '::selection': { backgroundColor: p.accent, color: p.accentInk },
+          body: {
+            backgroundColor: p.panel,
+            color: p.text,
+            scrollbarColor: `${p.edge} transparent`,
+            '&::-webkit-scrollbar, & *::-webkit-scrollbar': { width: 6, height: 6 },
+            '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
+              borderRadius: 20,
+              backgroundColor: p.edge,
+            },
+          },
+          /* Theme toggle: circular wipe expanding from the toggle button */
+          '::view-transition-old(root)': {
+            animation: 'none',
+            mixBlendMode: 'normal',
+          },
+          '@keyframes wipeIn': {
+            from: { clipPath: 'circle(0% at var(--wipe-x, 90%) var(--wipe-y, 5%))' },
+            to: { clipPath: 'circle(150% at var(--wipe-x, 90%) var(--wipe-y, 5%))' },
+          },
+          '::view-transition-new(root)': {
+            animation: 'wipeIn 0.5s ease-in-out',
+            mixBlendMode: 'normal',
+            zIndex: 1,
+          },
         },
       },
       MuiPaper: {
         styleOverrides: {
-          root: { backgroundImage: 'none', border: `1px solid ${p.border}` },
+          root: {
+            backgroundImage: 'none',
+            borderRadius: 12,
+          },
         },
       },
       MuiButton: {
         defaultProps: { disableElevation: true },
+        styleOverrides: { root: { borderRadius: 6 } },
+      },
+      MuiLink: {
         styleOverrides: {
-          root: { borderRadius: 4 },
-          contained: {
-            backgroundColor: p.ink,
-            color: p.inkText,
-            '&:hover': { backgroundColor: p.inkHover },
+          root: {
+            color: p.text,
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
           },
-          outlined: { borderColor: p.borderStrong, color: p.text },
         },
       },
-      MuiTextField: { defaultProps: { size: 'small' } },
-      MuiOutlinedInput: {
+      MuiTooltip: {
+        styleOverrides: { tooltip: { borderRadius: 8, fontWeight: 600 } },
+      },
+      MuiTextField: {
         styleOverrides: {
-          root: { borderRadius: 4, backgroundColor: p.surface },
-          notchedOutline: { borderColor: p.borderStrong },
+          root: {
+            '& .MuiOutlinedInput-root': {
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: p.green },
+            },
+          },
         },
       },
-      MuiTableCell: { styleOverrides: { root: { borderColor: p.border } } },
-      MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
-      MuiTooltip: { styleOverrides: { tooltip: { borderRadius: 4, fontWeight: 500 } } },
-      MuiDialog: { styleOverrides: { paper: { backgroundImage: 'none' } } },
     },
   });
 }

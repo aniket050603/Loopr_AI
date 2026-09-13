@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -7,6 +7,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 import SearchIcon from '@mui/icons-material/Search';
 import { alpha } from '@mui/material/styles';
+import { Calendar } from 'lucide-react';
 import { FONT_MONO } from '../theme/theme';
 import { usePalette } from '../theme/ThemeModeProvider';
 import { debounce } from '../utils/debounce';
@@ -23,6 +24,73 @@ const fieldSx = {
   '& .MuiOutlinedInput-root': { borderRadius: '6px' },
   '& .MuiInputLabel-root': { fontSize: 13.5 },
 } as const;
+
+/**
+ * Date input that opens the native calendar picker on any click/focus
+ * (not just the tiny corner indicator) and shows a visible calendar icon.
+ * `min`/`max` cross-constrain the From/To pair.
+ */
+function DateField({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  min?: string;
+  max?: string;
+  onChange: (value: string | undefined) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function openPicker() {
+    try {
+      inputRef.current?.showPicker?.();
+    } catch {
+      /* some browsers only allow showPicker from a direct user gesture */
+    }
+  }
+
+  return (
+    <TextField
+      inputRef={inputRef}
+      size="small"
+      label={label}
+      type="date"
+      InputLabelProps={{ shrink: true }}
+      inputProps={{ min, max }}
+      onClick={openPicker}
+      onFocus={openPicker}
+      onChange={(e) => onChange(e.target.value || undefined)}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment
+            position="end"
+            onClick={openPicker}
+            sx={{ cursor: 'pointer', '&:hover svg': { color: 'text.primary' } }}
+          >
+            <Calendar size={15} className="date-picker-icon" />
+          </InputAdornment>
+        ),
+        sx: {
+          borderRadius: '8px',
+          fontSize: 14,
+          '& input::-webkit-calendar-picker-indicator': {
+            opacity: 0,
+            position: 'absolute',
+            right: 0,
+            width: '28px',
+            height: '100%',
+            cursor: 'pointer',
+          },
+        },
+      }}
+      sx={fieldSx}
+    />
+  );
+}
 
 function SegGroup({
   label,
@@ -56,7 +124,7 @@ function SegGroup({
           p: '2px',
           bgcolor: (t) => alpha(t.palette.text.primary, 0.045),
           border: (t) => `1px solid ${t.palette.divider}`,
-          borderRadius: 999,
+          borderRadius: 9999,
         }}
       >
         {options.map((o) => {
@@ -72,7 +140,7 @@ function SegGroup({
                 py: 0.3,
                 fontSize: 12,
                 fontWeight: 600,
-                borderRadius: 999,
+                borderRadius: 9999,
                 transition: 'all 0.18s ease',
                 color: (t) => (active ? t.palette.background.paper : 'text.secondary'),
                 bgcolor: (t) => (active ? t.palette.text.primary : 'transparent'),
@@ -163,7 +231,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
               px: 1.5,
               minWidth: 0,
               whiteSpace: 'nowrap',
-              borderRadius: 999,
+              borderRadius: 9999,
               border: `1px solid ${palette.borderStrong}`,
               color: 'text.secondary',
               '&:hover': { color: 'error.main', borderColor: 'error.main' },
@@ -219,24 +287,18 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
           ))}
         </TextField>
 
-        <TextField
-          size="small"
+        <DateField
           label="From date"
-          type="date"
-          InputLabelProps={{ shrink: true }}
           value={filters.dateFrom ?? ''}
-          onChange={(e) => update('dateFrom', e.target.value || undefined)}
-          sx={fieldSx}
+          max={filters.dateTo}
+          onChange={(v) => update('dateFrom', v)}
         />
 
-        <TextField
-          size="small"
+        <DateField
           label="To date"
-          type="date"
-          InputLabelProps={{ shrink: true }}
           value={filters.dateTo ?? ''}
-          onChange={(e) => update('dateTo', e.target.value || undefined)}
-          sx={fieldSx}
+          min={filters.dateFrom}
+          onChange={(v) => update('dateTo', v)}
         />
 
         <TextField

@@ -22,6 +22,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { FONT_MONO } from '../theme/theme';
 import { usePalette } from '../theme/ThemeModeProvider';
 import { SectionHeader, Dot, Signed } from './ledger';
+import { decimal2, ledgerDate } from '../utils/format';
 import { useTransactions, getTableQueryString, type TableQuery } from '../hooks/useDashboardData';
 import { showAlert } from '../components/SnackbarHost';
 import FilterBar from './FilterBar';
@@ -36,29 +37,6 @@ const COLUMNS: Array<{ key: keyof Transaction; label: string; labelMobile?: stri
   { key: 'status', label: 'Status', width: { xs: 92, md: 104 } as never },
   { key: 'user_id', label: 'User', hideOnMobile: true, width: 96 },
 ];
-
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-const dateTime = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-function ledgerDate(d: Date, detail: 'full' | 'date' | 'short'): string {
-  const parts = dateTime.formatToParts(d);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  const base = `${get('day')} ${get('month')}`;
-  if (detail === 'short') return base;
-  const dated = `${base} '${get('year')}`;
-  return detail === 'full' ? `${dated} · ${get('hour')}:${get('minute')}` : dated;
-}
 
 const MONO = FONT_MONO;
 
@@ -127,20 +105,22 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
     py: 1.25,
   } as const;
 
-  return (
-    <Paper
+  return (      <Paper
       id="transactions"
       elevation={0}
       sx={{
-        borderRadius: '14px',
+        borderRadius: '13px',
         overflow: 'hidden',
         scrollMarginTop: 80,
+        bgcolor: (t2) => t2.palette.background.paper,
+        border: (t2) => `1px solid ${t2.palette.divider}`,
         boxShadow: (t2) =>
           t2.palette.mode === 'light'
             ? '0 1px 3px rgba(25,24,19,0.04), 0 8px 28px rgba(25,24,19,0.05)'
-            : '0 1px 3px rgba(0,0,0,0.3), 0 10px 32px rgba(0,0,0,0.35)',
+            : '0 8px 26px rgba(0,0,0,0.3)',
       }}
     >
+
       <Box sx={{ p: { xs: 2, md: 2.5 } }}>
         <SectionHeader
           index="03"
@@ -160,7 +140,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                   sx={{
                     fontFamily: FONT_MONO,
                     fontSize: 11,
-                    borderRadius: 999,
+                    borderRadius: 9999,
                     border: `1px solid ${palette.borderStrong}`,
                   }}
                 >
@@ -176,7 +156,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                   fontFamily: FONT_MONO,
                   fontSize: 11,
                   px: 1.75,
-                  borderRadius: 999,
+                  borderRadius: 9999,
                 }}
               >
                 CSV
@@ -286,7 +266,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                       </TableCell>
                       <TableCell align="right" sx={{ fontSize: { xs: 14, md: 15 }, fontWeight: 700 }}>
                         <Signed
-                          value={currency.format(tx.amount).replace('$', '')}
+                          value={decimal2(tx.amount)}
                           currency="$"
                           sign={tx.category === 'Revenue' ? '+' : '−'}
                         />
@@ -308,7 +288,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                             gap: 1,
                             px: 1.25,
                             py: 0.45,
-                            borderRadius: 999,
+                            borderRadius: 9999,
                             fontSize: { xs: 12, md: 12.5 },
                             fontWeight: 600,
                             fontFamily: MONO,
@@ -324,6 +304,7 @@ export default function TransactionsTable({ filters, onFiltersChange }: Transact
                         >
                           <Dot
                             size={6}
+                            pulse={tx.status === 'Pending'}
                             color={tx.status === 'Paid' ? theme.palette.success.main : theme.palette.warning.main}
                           />
                           {tx.status}

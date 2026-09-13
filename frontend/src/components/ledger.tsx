@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import { FONT_MONO } from '../theme/theme';
 
+/** Numbered section label with a rule underneath, e.g. "01  Overview". */
 export function SectionHeader({
   index,
   title,
@@ -60,22 +61,39 @@ export function SectionHeader({
   );
 }
 
-export function Dot({ color, size = 7 }: { color: string; size?: number }) {
+/** Small solid dot used in table status/category pills; `pulse` adds a radar halo for live states. */
+export function Dot({ color, size = 7, pulse = false }: { color: string; size?: number; pulse?: boolean }) {
   return (
     <Box
       component="span"
       sx={{
+        position: 'relative',
         display: 'inline-block',
         width: size,
         height: size,
         borderRadius: '50%',
         bgcolor: color,
         flexShrink: 0,
+        ...(pulse && {
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: -3,
+            borderRadius: '50%',
+            border: `1.5px solid ${color}`,
+            animation: 'dotPulse 1.8s ease-out infinite',
+            '@keyframes dotPulse': {
+              '0%': { transform: 'scale(0.6)', opacity: 0.9 },
+              '70%, 100%': { transform: 'scale(1.7)', opacity: 0 },
+            },
+          },
+        }),
       }}
     />
   );
 }
 
+/** Signed amount rendering: "+ $ 1,500.00" with dimmed currency glyph. */
 export function Signed({
   value,
   currency,
@@ -112,88 +130,6 @@ export function Signed({
         {currency}
       </Box>
       {value}
-    </Box>
-  );
-}
-
-export function Sparkline({
-  data,
-  width = 120,
-  height = 34,
-  stroke,
-}: {
-  data: number[];
-  width?: number;
-  height?: number;
-  stroke: string;
-}) {
-  if (data.length < 2) return null;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const span = max - min || 1;
-  const pts = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * (width - 4) + 2;
-      const y = height - 3 - ((v - min) / span) * (height - 6);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-  return (
-    <svg width={width} height={height} aria-hidden style={{ display: 'block' }}>
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <circle
-        cx={pts.split(' ').slice(-1)[0].split(',')[0]}
-        cy={pts.split(' ').slice(-1)[0].split(',')[1]}
-        r={2.2}
-        fill={stroke}
-      />
-    </svg>
-  );
-}
-
-export function StatBlock({
-  label,
-  children,
-  align = 'left',
-}: {
-  label: string;
-  children: React.ReactNode;
-  align?: 'left' | 'right';
-}) {
-  const theme = useTheme();
-  return (
-    <Box
-      sx={{
-        px: { xs: 2, md: 3 },
-        py: { xs: 1.75, md: 2 },
-        borderLeft: { md: `1px solid ${theme.palette.divider}` },
-        borderTop: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
-        textAlign: align,
-        minWidth: 0,
-      }}
-    >
-      <Typography
-        variant="caption"
-        sx={{
-          display: 'block',
-          fontSize: 10.5,
-          fontWeight: 600,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          mb: 0.75,
-        }}
-      >
-        {label}
-      </Typography>
-      {children}
     </Box>
   );
 }

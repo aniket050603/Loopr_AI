@@ -10,6 +10,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useTheme, alpha } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { FONT_DISPLAY, FONT_MONO } from '../theme/theme';
 import { usePalette } from '../theme/ThemeModeProvider';
 import { api } from '../api/client';
@@ -128,7 +129,7 @@ export default function ExportModal({ open, onClose, queryString }: ExportModalP
                   mx: -0.5,
                   px: 1,
                   py: 0.5,
-                  borderRadius: 1.5,
+                  borderRadius: '10px',
                   transition: 'background-color 0.12s ease',
                   '&:hover': { bgcolor: (t) => alpha(t.palette.text.primary, 0.04) },
                 }}
