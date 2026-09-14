@@ -11,9 +11,22 @@ import { useLedgerMode, usePalette } from '../theme/ThemeModeProvider';
 import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
 import { LooprMark } from '../components/brand';
+import { LoginIntro } from '../components/LoginIntro';
 
 const DEMO_EMAIL = 'demo@fin.com';
 const DEMO_PASSWORD = 'demo1234';
+
+/** sessionStorage flag: the intro plays at most once per browser session. */
+const INTRO_SEEN_KEY = 'loopr-intro-seen';
+
+/** Whether this visit should still see the intro (skipped for reduced motion). */
+function shouldShowIntro(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  // ?intro=1 forces a replay — handy for demos and QA.
+  if (new URLSearchParams(window.location.search).has('intro')) return true;
+  return sessionStorage.getItem(INTRO_SEEN_KEY) !== '1';
+}
 
 /** Ink color used on top of the green accent (brand constant). */
 const INK_ON_ACCENT = '#0B0F19';
@@ -265,6 +278,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [password, setPassword] = useState(DEMO_PASSWORD);
   const [loading, setLoading] = useState(false);
+  const [showIntro, setShowIntro] = useState(shouldShowIntro);
+  const [introLeaving, setIntroLeaving] = useState(false);
 
   const rule = theme.palette.divider;
   const ink = getPalette(colorMode);
@@ -288,6 +303,14 @@ export default function LoginPage() {
     }
   }
 
+  /** Fades the intro out, then unmounts it; remembered for the session. */
+  function finishIntro(): void {
+    if (introLeaving) return;
+    sessionStorage.setItem(INTRO_SEEN_KEY, '1');
+    setIntroLeaving(true);
+    window.setTimeout(() => setShowIntro(false), 700);
+  }
+
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     if (isRegister) {
@@ -308,6 +331,8 @@ export default function LoginPage() {
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
         bgcolor: 'background.default',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* LEFT: brand panel — no header bar; brand + toggle live inside the split */}
@@ -560,6 +585,22 @@ export default function LoginPage() {
           </Typography>
         </Box>
       </Box>
+
+      {/* Cinematic particle intro — plays once per session, click/keys to skip */}
+      {showIntro && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 40,
+            opacity: introLeaving ? 0 : 1,
+            pointerEvents: introLeaving ? 'none' : 'auto',
+            transition: 'opacity 0.7s ease',
+          }}
+        >
+          <LoginIntro onFinish={finishIntro} />
+        </Box>
+      )}
     </Box>
   );
 }
