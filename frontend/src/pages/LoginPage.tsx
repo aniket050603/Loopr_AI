@@ -12,6 +12,21 @@ import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
 import { LooprMark } from '../components/brand';
 
+const DEMO_EMAIL = 'demo@fin.com';
+const DEMO_PASSWORD = 'demo1234';
+
+/** Ink color used on top of the green accent (brand constant). */
+const INK_ON_ACCENT = '#0B0F19';
+
+type AuthMode = 'signin' | 'register';
+
+/** Human-readable message from an axios error, with a safe fallback. */
+function apiErrorMessage(error: unknown, fallback: string): string {
+  return (
+    (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
+  );
+}
+
 function ModeToggle() {
   const { mode, toggle } = useLedgerMode();
   const palette = usePalette();
@@ -36,6 +51,63 @@ function ModeToggle() {
     >
       {mode === 'light' ? 'NIGHT' : 'DAY'}
     </Button>
+  );
+}
+
+/** Segmented Sign in / Create account switch. */
+function AuthTabs({
+  mode,
+  onChange,
+  rule,
+}: {
+  mode: AuthMode;
+  onChange: (mode: AuthMode) => void;
+  rule: string;
+}) {
+  const tabs: { id: AuthMode; label: string }[] = [
+    { id: 'signin', label: 'SIGN IN' },
+    { id: 'register', label: 'CREATE ACCOUNT' },
+  ];
+  return (
+    <Box
+      role="tablist"
+      aria-label="Authentication mode"
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        border: `1px solid ${rule}`,
+        borderRadius: '10px',
+        p: 0.4,
+        gap: 0.4,
+        bgcolor: 'transparent',
+      }}
+    >
+      {tabs.map((tab) => {
+        const active = tab.id === mode;
+        return (
+          <Button
+            key={tab.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tab.id)}
+            sx={{
+              py: 0.9,
+              borderRadius: '7px',
+              fontFamily: FONT_MONO,
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              fontWeight: active ? 700 : 500,
+              color: active ? INK_ON_ACCENT : 'text.secondary',
+              bgcolor: active ? (theme) => theme.palette.primary.main : 'transparent',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
+              '&:hover': { bgcolor: active ? undefined : 'action.hover' },
+            }}
+          >
+            {tab.label}
+          </Button>
+        );
+      })}
+    </Box>
   );
 }
 
@@ -93,7 +165,7 @@ function OrbitMark({ p }: { p: BrutalPalette }) {
           height: 46,
           borderRadius: '12px',
           bgcolor: p.green,
-          color: '#0B0F19',
+          color: INK_ON_ACCENT,
           display: 'grid',
           placeItems: 'center',
           fontFamily: FONT_DISPLAY,
@@ -110,7 +182,7 @@ function OrbitMark({ p }: { p: BrutalPalette }) {
   );
 }
 
-/** Slow-drifting aurora blobs. confined to their panel via the parent's overflow: hidden. */
+/** Slow-drifting aurora blobs, confined to their panel via the parent's overflow: hidden. */
 function Aurora() {
   const blobs = [
     { color: 'rgba(34,197,94,0.16)', size: 420, top: '-12%', left: '-10%', delay: '0s' },
@@ -147,43 +219,87 @@ function Aurora() {
   );
 }
 
-const DEMO_EMAIL = 'demo@fin.com';
-const DEMO_PASSWORD = 'demo1234';
+/** Row of headline stats on the brand panel. */
+function BrandStats() {
+  const stats: [string, string][] = [
+    ['300', 'records'],
+    ['4', 'users'],
+    ['12', 'months'],
+    ['CSV', 'export'],
+  ];
+  return (
+    <Box sx={{ display: 'flex', gap: { md: 4, lg: 6 }, flexWrap: 'wrap', position: 'relative' }}>
+      {stats.map(([value, label]) => (
+        <Box key={label}>
+          <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 600 }}>
+            {value}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_MONO,
+              fontSize: 10.5,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              opacity: 0.55,
+              mt: 0.25,
+            }}
+          >
+            {label}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 export default function LoginPage() {
-  const { login, user } = useAuth();
+  const { login, register, user } = useAuth();
   const theme = useTheme();
   const palette = usePalette();
-  const { mode } = useLedgerMode();
+  const { mode: colorMode } = useLedgerMode();
   const navigate = useNavigate();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [password, setPassword] = useState(DEMO_PASSWORD);
   const [loading, setLoading] = useState(false);
+
+  const rule = theme.palette.divider;
+  const ink = getPalette(colorMode);
+  const isRegister = authMode === 'register';
 
   if (user) {
     return <Navigate to="/" replace />;
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  /** Runs an auth action, reports the outcome, and enters the dashboard on success. */
+  async function runAuth(action: () => Promise<void>, successMessage: string, fallbackError: string): Promise<void> {
     setLoading(true);
     try {
-      await login(email, password);
-      showAlert('Login successful', 'success');
+      await action();
+      showAlert(successMessage, 'success');
       navigate('/', { replace: true });
     } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Unable to sign in. Please try again.';
-      showAlert(message, 'error');
+      showAlert(apiErrorMessage(error, fallbackError), 'error');
     } finally {
       setLoading(false);
     }
   }
 
-  const ink = getPalette(mode);
-  const rule = theme.palette.divider;
+  function handleSubmit(event: FormEvent): void {
+    event.preventDefault();
+    if (isRegister) {
+      void runAuth(() => register(name.trim(), email, password), 'Account created', 'Unable to create the account. Please try again.');
+    } else {
+      void runAuth(() => login(email, password), 'Login successful', 'Unable to sign in. Please try again.');
+    }
+  }
+
+  function handleDemoLogin(): void {
+    void runAuth(() => login(DEMO_EMAIL, DEMO_PASSWORD), 'Signed in with the demo account', 'Demo sign-in failed. Please try again.');
+  }
 
   return (
     <Box
@@ -260,32 +376,7 @@ export default function LoginPage() {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: { md: 4, lg: 6 }, flexWrap: 'wrap', position: 'relative' }}>
-          {[
-            ['300', 'records'],
-            ['4', 'users'],
-            ['12', 'months'],
-            ['CSV', 'export'],
-          ].map(([v, l]) => (
-            <Box key={l}>
-              <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 600 }}>
-                {v}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_MONO,
-                  fontSize: 10.5,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  opacity: 0.55,
-                  mt: 0.25,
-                }}
-              >
-                {l}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
+        <BrandStats />
       </Box>
 
       {/* RIGHT: form panel — no footer bar; copyright sits quietly at the bottom */}
@@ -331,7 +422,7 @@ export default function LoginPage() {
               maxWidth: 400,
               position: 'relative',
               borderRadius: '16px',
-              bgcolor: mode === 'light' ? 'rgba(255,255,255,0.72)' : 'rgba(15,18,25,0.72)',
+              bgcolor: colorMode === 'light' ? 'rgba(255,255,255,0.72)' : 'rgba(15,18,25,0.72)',
               backdropFilter: 'blur(14px)',
               border: `1px solid ${rule}`,
               boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
@@ -361,13 +452,29 @@ export default function LoginPage() {
             </Box>
 
             <Typography sx={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600 }}>
-              Sign in
+              {isRegister ? 'Create your account' : 'Welcome back'}
             </Typography>
             <Typography sx={{ mt: 0.5, fontSize: 13.5, color: 'text.secondary' }}>
-              Demo credentials are pre-filled below.
+              {isRegister
+                ? 'A JWT session is issued the moment you register.'
+                : 'Demo credentials are pre-filled below.'}
             </Typography>
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            <Box sx={{ mt: 2.5 }}>
+              <AuthTabs mode={authMode} onChange={setAuthMode} rule={rule} />
+            </Box>
+
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2.5 }}>
+              {isRegister && (
+                <TextField
+                  label="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  fullWidth
+                  autoComplete="name"
+                  helperText="Optional — defaults to your email handle."
+                />
+              )}
               <TextField
                 label="Email"
                 type="email"
@@ -376,6 +483,7 @@ export default function LoginPage() {
                 fullWidth
                 required
                 autoComplete="email"
+                sx={isRegister ? { mt: 2 } : undefined}
               />
               <TextField
                 label="Password"
@@ -384,8 +492,9 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 fullWidth
                 required
-                autoComplete="current-password"
-                sx={{ mt: 2.25 }}
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
+                helperText={isRegister ? 'At least 6 characters.' : undefined}
+                sx={{ mt: 2 }}
               />
               <Button
                 type="submit"
@@ -394,38 +503,41 @@ export default function LoginPage() {
                 variant="contained"
                 disabled={loading}
                 sx={{
-                  mt: 3,
+                  mt: 2.5,
                   py: 1.3,
                   borderRadius: '8px',
                   transition: 'transform 0.15s ease',
                   '&:not(:disabled):active': { transform: 'scale(0.98)' },
                 }}
               >
-                {loading ? 'Signing in…' : 'Enter the ledger'}
+                {loading
+                  ? isRegister
+                    ? 'Creating account…'
+                    : 'Signing in…'
+                  : isRegister
+                    ? 'Create account'
+                    : 'Enter the ledger'}
               </Button>
             </Box>
 
-            {/* One-click demo fill */}
+            {/* One-click demo login */}
             <Button
-              onClick={() => {
-                setEmail(DEMO_EMAIL);
-                setPassword(DEMO_PASSWORD);
-                showAlert('Demo credentials filled', 'info');
-              }}
+              onClick={handleDemoLogin}
+              disabled={loading}
+              fullWidth
               sx={{
-                mt: 2,
-                px: 1.5,
-                py: 0.4,
+                mt: 1.5,
+                py: 0.9,
                 fontFamily: FONT_MONO,
                 fontSize: 11,
-                letterSpacing: '0.06em',
+                letterSpacing: '0.1em',
                 color: 'text.secondary',
                 border: `1px dashed ${rule}`,
-                borderRadius: 9999,
+                borderRadius: '8px',
                 '&:hover': { color: 'text.primary', borderColor: palette.green },
               }}
             >
-              use demo account ↺
+              SIGN IN AS DEMO — SKIP THE FORM
             </Button>
           </Box>
         </Box>
