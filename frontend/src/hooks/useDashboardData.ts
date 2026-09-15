@@ -23,6 +23,12 @@ function buildTableParams(query: TableQuery): string {
   return params.toString();
 }
 
+/** Fetcher shared by the dashboard query and the post-login prefetch. */
+export async function fetchSummary(): Promise<SummaryResponse> {
+  const { data } = await api.get<SummaryResponse>('/transactions/summary');
+  return data;
+}
+
 export function useTransactions(query: TableQuery) {
   return useQuery<TransactionListResponse>({
     queryKey: ['transactions', query],
@@ -39,10 +45,7 @@ export function useTransactions(query: TableQuery) {
 export function useSummary() {
   return useQuery<SummaryResponse>({
     queryKey: ['summary'],
-    queryFn: async () => {
-      const { data } = await api.get<SummaryResponse>('/transactions/summary');
-      return data;
-    },
+    queryFn: fetchSummary,
   });
 }
 

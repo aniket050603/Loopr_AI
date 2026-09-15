@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, TOKEN_KEY, USER_KEY, type AuthUser } from '../api/client';
+import { fetchSummary } from '../hooks/useDashboardData';
 
 /** Payload the backend returns from both /auth/login and /auth/register. */
 interface AuthSession {
@@ -24,6 +26,7 @@ function applySession(session: AuthSession) {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const raw = localStorage.getItem(USER_KEY);
@@ -33,15 +36,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post<AuthSession>('/auth/login', { email, password });
-    setUser(applySession(data));
-  }, []);
+  /** Warm the dashboard KPI cache so the first paint after sign-in has data. */
+  const prefetchSummary = useCallback(() => {
+    void queryClient.prefetchQuery({ queryKey: ['summary'], queryFn: fetchSummary });
+  }, [queryClient]);
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
-    const { data } = await api.post<AuthSession>('/auth/register', { name, email, password });
-    setUser(applySession(data));
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const { data } = await api.post<AuthSession>('/auth/login', { email, password });
+      setUser(applySession(data));
+      prefetchSummary();
+    },
+    [prefetchSummary],
+  );
+
+  const register = useCallback(
+    async (name: string, email: string, password: string) => {
+      const { data } = await api.post<AuthSession>('/auth/register', { name, email, password });
+      setUser(applySession(data));
+      prefetchSummary();
+    },
+    [prefetchSummary],
+  );
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);

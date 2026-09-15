@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -12,6 +12,7 @@ import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
 import { LooprMark } from '../components/brand';
 import { LoginIntro } from '../components/LoginIntro';
+import { wakeApi } from '../api/client';
 
 const DEMO_EMAIL = 'demo@fin.com';
 const DEMO_PASSWORD = 'demo1234';
@@ -280,6 +281,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showIntro, setShowIntro] = useState(shouldShowIntro);
   const [introLeaving, setIntroLeaving] = useState(false);
+
+  // Start waking the API the moment the login page appears (Render cold starts).
+  useEffect(() => {
+    void wakeApi();
+  }, []);
 
   const rule = theme.palette.divider;
   const ink = getPalette(colorMode);

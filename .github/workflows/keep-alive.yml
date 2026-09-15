@@ -1,0 +1,15 @@
+# Pings the Render API every few minutes so its free tier never sleeps and
+# reviewers always get warm-speed logins. Manual trigger included for testing.
+name: Keep API warm
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --max-time 90 https://financial-dashboard-api-6hm2.onrender.com/health
