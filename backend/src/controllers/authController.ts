@@ -3,6 +3,18 @@ import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/User.js';
 import { signToken } from '../middleware/auth.js';
 
+export type ThemePreference = 'light' | 'dark';
+
+/** Client-safe user shape shared by every auth response. */
+function publicUser(user: { _id: unknown; email: string; name: string; preferredTheme?: ThemePreference }) {
+  return {
+    id: String(user._id),
+    email: user.email,
+    name: user.name,
+    preferredTheme: user.preferredTheme === 'light' ? 'light' : 'dark',
+  };
+}
+
 function parseCredentials(body: unknown): { email: string; password: string; name?: string } | null {
   if (typeof body !== 'object' || body === null) return null;
   const { email, password, name } = body as Record<string, unknown>;
@@ -35,7 +47,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   res.status(201).json({
     token: signToken({ id: user._id, email: user.email, name: user.name }),
-    user: { id: String(user._id), email: user.email, name: user.name },
+    user: publicUser(user),
   });
 }
 
@@ -54,15 +66,40 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   res.json({
     token: signToken({ id: user._id, email: user.email, name: user.name }),
-    user: { id: String(user._id), email: user.email, name: user.name },
+    user: publicUser(user),
   });
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
-  const user = await UserModel.findById(req.user?.sub).select('email name').lean();
+  const user = await UserModel.findById(req.user?.sub)
+    .select('email name preferredTheme')
+    .lean();
   if (!user) {
     res.status(404).json({ message: 'User not found.' });
     return;
   }
-  res.json({ user: { id: String(user._id), email: user.email, name: user.name } });
+  res.json({ user: publicUser(user) });
+}
+
+/** PATCH /auth/theme — persist the account's UI theme so it follows the user across devices. */
+export async function updateTheme(req: Request, res: Response): Promise<void> {
+  const { theme } = (typeof req.body === 'object' && req.body !== null ? req.body : {}) as {
+    theme?: unknown;
+  };
+  if (theme !== 'light' && theme !== 'dark') {
+    res.status(400).json({ message: "theme must be 'light' or 'dark'." });
+    return;
+  }
+
+  const user = await UserModel.findByIdAndUpdate(
+    req.user?.sub,
+    { preferredTheme: theme },
+    { new: true },
+  ).select('email name preferredTheme');
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found.' });
+    return;
+  }
+  res.json({ user: publicUser(user) });
 }

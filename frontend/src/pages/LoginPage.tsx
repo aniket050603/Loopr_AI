@@ -604,7 +604,7 @@ export default function LoginPage() {
             transition: 'opacity 0.7s ease',
           }}
         >
-          <LoginIntro onFinish={finishIntro} />
+          <LoginIntro onFinish={finishIntro} mode={colorMode} />
         </Box>
       )}
     </Box>

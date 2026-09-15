@@ -7,6 +7,8 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  /** UI theme saved on the account; applied on sign-in. */
+  preferredTheme?: 'light' | 'dark';
 }
 
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:4000'}/api`;

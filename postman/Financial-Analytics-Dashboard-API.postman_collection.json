@@ -24,8 +24,12 @@
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
         },
         "description": "Unauthenticated liveness probe."
       },
@@ -50,8 +54,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
             },
             "description": "Creates an account and returns a JWT (201)."
           },
@@ -88,8 +98,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
             },
             "description": "Returns `{ token, user }`. The test script stores the JWT in the `token` collection variable for the other requests."
           },
@@ -102,9 +118,49 @@
             "auth": "bearer",
             "url": {
               "raw": "{{baseUrl}}/api/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Update theme preference",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"theme\": \"light\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/theme",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "theme"
+              ]
+            },
+            "description": "Saves the account's UI theme ('light' or 'dark') so it follows the user across devices."
           },
           "response": []
         }
@@ -120,11 +176,22 @@
             "auth": "bearer",
             "url": {
               "raw": "{{baseUrl}}/api/transactions?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transactions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             },
             "description": "Default list, newest first."
@@ -138,18 +205,50 @@
             "auth": "bearer",
             "url": {
               "raw": "{{baseUrl}}/api/transactions?category=Revenue&status=Paid&userId=user_001&dateFrom=2024-01-01&dateTo=2024-06-30&minAmount=500&maxAmount=3000&sortBy=amount&sortDir=desc",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transactions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
               "query": [
-                { "key": "category", "value": "Revenue" },
-                { "key": "status", "value": "Paid" },
-                { "key": "userId", "value": "user_001" },
-                { "key": "dateFrom", "value": "2024-01-01" },
-                { "key": "dateTo", "value": "2024-06-30" },
-                { "key": "minAmount", "value": "500" },
-                { "key": "maxAmount", "value": "3000" },
-                { "key": "sortBy", "value": "amount" },
-                { "key": "sortDir", "value": "desc" }
+                {
+                  "key": "category",
+                  "value": "Revenue"
+                },
+                {
+                  "key": "status",
+                  "value": "Paid"
+                },
+                {
+                  "key": "userId",
+                  "value": "user_001"
+                },
+                {
+                  "key": "dateFrom",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2024-06-30"
+                },
+                {
+                  "key": "minAmount",
+                  "value": "500"
+                },
+                {
+                  "key": "maxAmount",
+                  "value": "3000"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "amount"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "desc"
+                }
               ]
             }
           },
@@ -162,9 +261,19 @@
             "auth": "bearer",
             "url": {
               "raw": "{{baseUrl}}/api/transactions?search=user_003",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transactions"],
-              "query": [{ "key": "search", "value": "user_003" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "user_003"
+                }
+              ]
             }
           },
           "response": []
@@ -176,8 +285,14 @@
             "auth": "bearer",
             "url": {
               "raw": "{{baseUrl}}/api/transactions/summary",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transactions", "summary"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "summary"
+              ]
             }
           },
           "response": []
@@ -199,8 +314,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/transactions/export/csv",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transactions", "export", "csv"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "export",
+                "csv"
+              ]
             },
             "description": "Body: `columns` (required subset of id, date, amount, category, status, user_id, user_profile) plus optional filters (search, category, status, userId, dateFrom, dateTo, minAmount, maxAmount) and sortBy/sortDir. Returns CSV attachment."
           },

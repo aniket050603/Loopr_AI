@@ -17,7 +17,7 @@
 import { useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { FONT_DISPLAY, FONT_MONO } from '../theme/theme';
+import { FONT_DISPLAY, FONT_MONO, type LedgerMode } from '../theme/theme';
 
 /** Total intro duration in ms (skip button appears after 1s). */
 const INTRO_DURATION_MS = 9000;
@@ -27,6 +27,49 @@ const PHASE_FLOW_END = 0.34;
 const PHASE_BURST_END = 0.58;
 const PHASE_ORBS_END = 0.82;
 // remaining time is the VORTEX phase
+
+/** Every color the intro uses, per theme. RGB triplets compose with alpha. */
+interface IntroTheme {
+  canvas: string;
+  /** Motion-blur fade that draws the silk trails. */
+  trailFade: string;
+  /** Edge darkening so the text always reads. */
+  vignette: string;
+  blue: string;
+  amber: string;
+  titleInk: string;
+  kickerInk: string;
+  subInk: string;
+  microInk: string;
+  skipInk: string;
+}
+
+const INTRO_THEMES: Record<LedgerMode, IntroTheme> = {
+  dark: {
+    canvas: '#04060c',
+    trailFade: 'rgba(4, 6, 12, 0.09)',
+    vignette: 'rgba(4, 6, 12, 0.55)',
+    blue: '96, 148, 255',
+    amber: '234, 179, 8',
+    titleInk: '#f4f6fb',
+    kickerInk: 'rgba(255, 255, 255, 0.5)',
+    subInk: 'rgba(255, 255, 255, 0.62)',
+    microInk: 'rgba(255, 255, 255, 0.34)',
+    skipInk: 'rgba(255, 255, 255, 0.4)',
+  },
+  light: {
+    canvas: '#f6f4ef',
+    trailFade: 'rgba(246, 244, 239, 0.1)',
+    vignette: 'rgba(195, 201, 212, 0.45)',
+    blue: '37, 99, 235',
+    amber: '217, 119, 6',
+    titleInk: '#14181f',
+    kickerInk: 'rgba(20, 24, 31, 0.55)',
+    subInk: 'rgba(20, 24, 31, 0.65)',
+    microInk: 'rgba(20, 24, 31, 0.4)',
+    skipInk: 'rgba(20, 24, 31, 0.45)',
+  },
+};
 
 /** Particle count scales with screen size so phones stay at 60fps. */
 function particleCount(width: number): number {
@@ -69,17 +112,22 @@ const PHASE_TEXTS: Record<'flow' | 'burst' | 'orbs' | 'vortex', PhaseText> = {
   },
 };
 
-export function LoginIntro({ onFinish }: { onFinish: () => void }) {
+export function LoginIntro({ onFinish, mode }: { onFinish: () => void; mode: LedgerMode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finishedRef = useRef(false);
   const finish = useRef(onFinish);
   finish.current = onFinish;
+  // Read once by the animation effect; the theme cannot change mid-intro.
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const T = INTRO_THEMES[modeRef.current];
 
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -176,7 +224,7 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       const t = elapsed / 1000;
 
       // Motion-blur style fade instead of a hard clear → long silk trails.
-      ctx!.fillStyle = 'rgba(4, 6, 12, 0.09)';
+      ctx!.fillStyle = T.trailFade;
       ctx!.fillRect(0, 0, width, height);
 
       // Text is drawn as DOM (crisper) — but each phase change swaps it.
@@ -241,8 +289,8 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       if (phase === 'orbs') {
         for (const orb of orbs) {
           const glow = ctx!.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r * 2.2);
-          glow.addColorStop(0, 'rgba(96, 148, 255, 0.20)');
-          glow.addColorStop(1, 'rgba(96, 148, 255, 0)');
+          glow.addColorStop(0, `rgba(${T.blue}, 0.2)`);
+          glow.addColorStop(1, `rgba(${T.blue}, 0)`);
           ctx!.fillStyle = glow;
           ctx!.fillRect(orb.x - orb.r * 2.2, orb.y - orb.r * 2.2, orb.r * 4.4, orb.r * 4.4);
         }
@@ -251,8 +299,8 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       // Gentle vignette (cached per resize) so the text always reads.
       if (!vignette) {
         vignette = ctx!.createRadialGradient(cx, cy, 0, cx, cy, Math.max(width, height) * 0.7);
-        vignette.addColorStop(0, 'rgba(4,6,12,0)');
-        vignette.addColorStop(1, 'rgba(4,6,12,0.55)');
+        vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignette.addColorStop(1, T.vignette);
       }
       ctx!.fillStyle = vignette;
       ctx!.fillRect(0, 0, width, height);
@@ -270,8 +318,8 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       const alpha =
         phase === 'vortex' ? 0.55 + progress * 0.4 : 0.35 + p.rand * 0.5;
       ctx!.fillStyle = amber
-        ? `rgba(234, 179, 8, ${alpha})`
-        : `rgba(96, 148, 255, ${alpha})`;
+        ? `rgba(${T.amber}, ${alpha})`
+        : `rgba(${T.blue}, ${alpha})`;
       const size = phase === 'orbs' ? p.size * 1.25 : p.size;
       ctx!.fillRect(p.x, p.y, size, size);
     }
@@ -304,6 +352,7 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
   function setText(phase: 'flow' | 'burst' | 'orbs' | 'vortex'): void {
     const root = textRootRef.current;
     if (!root) return;
+    const theme = INTRO_THEMES[modeRef.current];
     const text = PHASE_TEXTS[phase];
     root.innerHTML = '';
     const wrap = document.createElement('div');
@@ -329,6 +378,9 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       wrap.appendChild(sub);
     }
     root.appendChild(wrap);
+    // Re-ink per theme via CSS custom properties (see the style block).
+    root.style.setProperty('--intro-title-ink', theme.titleInk);
+    root.style.setProperty('--intro-blue', theme.blue);
   }
 
   return (
@@ -336,7 +388,7 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
       sx={{
         position: 'absolute',
         inset: 0,
-        bgcolor: '#04060c',
+        bgcolor: INTRO_THEMES[mode].canvas,
         overflow: 'hidden',
         cursor: 'pointer',
       }}
@@ -370,7 +422,7 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
           fontFamily: FONT_MONO,
           fontSize: 10,
           letterSpacing: '0.22em',
-          color: 'rgba(255,255,255,0.34)',
+          color: INTRO_THEMES[mode].microInk,
           userSelect: 'none',
         }}
       >
@@ -403,7 +455,7 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
           fontFamily: FONT_MONO,
           fontSize: 10.5,
           letterSpacing: '0.24em',
-          color: 'rgba(255,255,255,0.4)',
+          color: INTRO_THEMES[mode].skipInk,
           userSelect: 'none',
           animation: 'introFade 1.2s ease 0.9s both',
           '@keyframes introFade': {
@@ -422,19 +474,19 @@ export function LoginIntro({ onFinish }: { onFinish: () => void }) {
         .intro-kicker {
           font-family: ${FONT_MONO};
           font-size: 11px; letter-spacing: 0.3em;
-          color: rgba(255,255,255,0.5); margin-bottom: 14px;
+          color: ${INTRO_THEMES[mode].kickerInk}; margin-bottom: 14px;
         }
         .intro-title {
           font-family: ${FONT_DISPLAY};
           font-weight: 700; line-height: 1.05; letter-spacing: -0.02em;
-          color: #f4f6fb;
-          text-shadow: 0 0 40px rgba(96,148,255,0.35);
+          color: var(--intro-title-ink, #f4f6fb);
+          text-shadow: 0 0 40px rgba(var(--intro-blue, 96, 148, 255), 0.35);
           font-size: clamp(30px, 6vw, 64px);
         }
         .intro-sub {
           font-family: ${FONT_MONO};
           font-size: 13px; letter-spacing: 0.08em;
-          color: rgba(255,255,255,0.62); margin-top: 16px;
+          color: ${INTRO_THEMES[mode].subInk}; margin-top: 16px;
         }
         @keyframes introRise {
           from { opacity: 0; transform: translateY(18px); filter: blur(6px); }

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useQueryClient } from '@tanstack/react-query';
 import { api, TOKEN_KEY, USER_KEY, type AuthUser } from '../api/client';
 import { fetchSummary } from '../hooks/useDashboardData';
+import { useLedgerMode, THEME_STORAGE_KEY } from '../theme/ThemeModeProvider';
 
 /** Payload the backend returns from both /auth/login and /auth/register. */
 interface AuthSession {
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const { setMode } = useLedgerMode();
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const raw = localStorage.getItem(USER_KEY);
@@ -45,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const { data } = await api.post<AuthSession>('/auth/login', { email, password });
       setUser(applySession(data));
+      // The account's saved theme wins on sign-in.
+      if (data.user.preferredTheme) setMode(data.user.preferredTheme);
       prefetchSummary();
     },
     [prefetchSummary],
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (name: string, email: string, password: string) => {
       const { data } = await api.post<AuthSession>('/auth/register', { name, email, password });
       setUser(applySession(data));
+      if (data.user.preferredTheme) setMode(data.user.preferredTheme);
       prefetchSummary();
     },
     [prefetchSummary],
@@ -62,8 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    // Forget this browser's theme so the next sign-in adopts the account's choice.
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    setMode('dark');
     setUser(null);
-  }, []);
+  }, [setMode]);
 
   const value = useMemo(() => ({ user, login, register, logout }), [user, login, register, logout]);
 

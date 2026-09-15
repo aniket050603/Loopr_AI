@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useMemo,
   useState,
   createContext,
@@ -9,12 +10,24 @@ import {
 import { flushSync } from 'react-dom';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { buildTheme, getPalette, type LedgerMode, type Palette } from './theme';
+import { api, TOKEN_KEY } from '../api/client';
 
-const STORAGE_KEY = 'ledger-mode';
+/** localStorage key for the browser-level theme choice. */
+export const THEME_STORAGE_KEY = 'ledger-mode';
 
-const ModeContext = createContext<{ mode: LedgerMode; toggle: () => void }>({
-  mode: 'light',
+const STORAGE_KEY = THEME_STORAGE_KEY;
+
+interface ModeContextValue {
+  mode: LedgerMode;
+  toggle: () => void;
+  /** Switch theme programmatically (e.g. adopting the account's saved choice). */
+  setMode: (mode: LedgerMode) => void;
+}
+
+const ModeContext = createContext<ModeContextValue>({
+  mode: 'dark',
   toggle: () => {},
+  setMode: () => {},
 });
 
 export function useLedgerMode() {
@@ -33,7 +46,7 @@ const supportsViewTransitions =
 let lastPointer = { x: 0, y: 0 };
 
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<LedgerMode>(() => {
+  const [mode, setModeState] = useState<LedgerMode>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       // Night mode is the default; only an explicit day choice switches it.
@@ -52,43 +65,59 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pointermove', onMove);
   }, []);
 
-  const value = useMemo(
-    () => ({
-      mode,
-      toggle: () => {
-        const next: LedgerMode = mode === 'light' ? 'dark' : 'light';
-        const persist = () => {
-          try {
-            localStorage.setItem(STORAGE_KEY, next);
-          } catch {
-            /* private mode */
-          }
-        };
-
-        const reducedMotion =
-          typeof window !== 'undefined' &&
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (supportsViewTransitions && !reducedMotion) {
-          const root = document.documentElement;
-          root.style.setProperty('--wipe-x', `${lastPointer.x}px`);
-          root.style.setProperty('--wipe-y', `${lastPointer.y}px`);
-          // The state change (and thus the repaint) must happen inside the
-          // transition callback for the wipe to capture both states.
-          document.startViewTransition(() => {
-            flushSync(() => {
-              persist();
-              setMode(next);
-            });
-          });
-        } else {
-          persist();
-          setMode(next);
+  /** Applies a mode with the wipe animation; optionally remembers the choice. */
+  const applyMode = useCallback((next: LedgerMode, persist: boolean) => {
+    const paint = () => {
+      if (persist) {
+        try {
+          localStorage.setItem(STORAGE_KEY, next);
+        } catch {
+          /* private mode */
         }
-      },
-    }),
-    [mode],
+      }
+      setModeState(next);
+    };
+
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (supportsViewTransitions && !reducedMotion) {
+      const root = document.documentElement;
+      root.style.setProperty('--wipe-x', `${lastPointer.x}px`);
+      root.style.setProperty('--wipe-y', `${lastPointer.y}px`);
+      // The state change (and thus the repaint) must happen inside the
+      // transition callback for the wipe to capture both states.
+      document.startViewTransition(() => {
+        flushSync(paint);
+      });
+    } else {
+      paint();
+    }
+  }, []);
+
+  /** Saved on this browser AND on the account (when signed in). */
+  const toggle = useCallback(() => {
+    const next: LedgerMode = mode === 'light' ? 'dark' : 'light';
+    applyMode(next, true);
+    // Persist to the account too, so the theme follows the user across
+    // devices. Skipped on the login page, where there is no session yet.
+    if (localStorage.getItem(TOKEN_KEY)) {
+      api.patch('/auth/theme', { theme: next }).catch(() => {
+        /* best effort — the browser choice already persists */
+      });
+    }
+  }, [mode, applyMode]);
+
+  /** Applies a mode without recording it as the user's choice. */
+  const setMode = useCallback(
+    (next: LedgerMode) => {
+      applyMode(next, false);
+    },
+    [applyMode],
   );
+
+  const value = useMemo(() => ({ mode, toggle, setMode }), [mode, toggle, setMode]);
 
   const theme = useMemo(() => buildTheme(mode), [mode]);
 
