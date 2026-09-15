@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import LinearProgress from '@mui/material/LinearProgress';
+import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -22,10 +22,11 @@ const DEMO_PASSWORD = 'demo1234';
 const INTRO_SEEN_KEY = 'loopr-intro-seen';
 
 /**
- * Starts waking the API the moment this chunk loads — before React even
- * mounts — so a sleeping free-tier host boots while the intro plays.
+ * Fire-and-forget: starts waking the API the moment this chunk loads — before
+ * React even mounts — so a sleeping free-tier host boots while the intro plays.
+ * Silent by design; cold starts never surface in the UI.
  */
-const wakePromise = wakeApi();
+void wakeApi();
 
 /** Whether this visit should still see the intro (skipped for reduced motion). */
 function shouldShowIntro(): boolean {
@@ -288,12 +289,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showIntro, setShowIntro] = useState(shouldShowIntro);
   const [introLeaving, setIntroLeaving] = useState(false);
-  const [apiWarm, setApiWarm] = useState(false);
-
-  // Surface the wake state started at module load.
-  useEffect(() => {
-    void wakePromise.then(setApiWarm);
-  }, []);
 
   const rule = theme.palette.divider;
   const ink = getPalette(colorMode);
@@ -549,6 +544,13 @@ export default function LoginPage() {
                   '&:not(:disabled):active': { transform: 'scale(0.98)' },
                 }}
               >
+                {loading && (
+                  <CircularProgress
+                    size={18}
+                    color="inherit"
+                    sx={{ mr: 1.25, animationDuration: '700ms' }}
+                  />
+                )}
                 {loading
                   ? isRegister
                     ? 'Creating account…'
@@ -558,26 +560,6 @@ export default function LoginPage() {
                     : 'Enter the ledger'}
               </Button>
             </Box>
-
-            {loading && (
-              <LinearProgress
-                sx={{ mt: 1.5, height: 3, borderRadius: 999, overflow: 'hidden' }}
-              />
-            )}
-            {!loading && !apiWarm && (
-              <Typography
-                sx={{
-                  mt: 1.5,
-                  fontFamily: FONT_MONO,
-                  fontSize: 10.5,
-                  letterSpacing: '0.08em',
-                  color: 'warning.main',
-                  textAlign: 'center',
-                }}
-              >
-                WAKING THE SERVER — FIRST VISIT CAN TAKE UP TO A MINUTE
-              </Typography>
-            )}
 
             {/* One-click demo login */}
             <Button
