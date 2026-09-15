@@ -14,7 +14,8 @@
       // Apply saved theme before first paint to avoid a flash.
       try {
         var m = localStorage.getItem('ledger-mode');
-        if (m !== 'light' && m !== 'dark') m = 'light';
+        // Night mode is the default; day mode applies only if the user picked it.
+        if (m !== 'light' && m !== 'dark') m = 'dark';
         document.documentElement.style.backgroundColor = m === 'dark' ? '#131512' : '#F6F4EF';
       } catch (e) {}
     </script>

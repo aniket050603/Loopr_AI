@@ -36,9 +36,10 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<LedgerMode>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored === 'dark' ? 'dark' : 'light';
+      // Night mode is the default; only an explicit day choice switches it.
+      return stored === 'light' ? 'light' : 'dark';
     } catch {
-      return 'light';
+      return 'dark';
     }
   });
 
