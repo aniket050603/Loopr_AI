@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/User.js';
 import { signToken } from '../middleware/auth.js';
+import { unwrapCredentialBody, TIMING_EQUALIZER_HASH } from '../utils/credentialCrypto.js';
 
 export type ThemePreference = 'light' | 'dark';
 
@@ -27,6 +28,7 @@ function parseCredentials(body: unknown): { email: string; password: string; nam
 }
 
 export async function register(req: Request, res: Response): Promise<void> {
+  await unwrapCredentialBody(req);
   const creds = parseCredentials(req.body);
   if (!creds || !creds.email.includes('@') || creds.password.length < 6) {
     res.status(400).json({
@@ -52,6 +54,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
+  await unwrapCredentialBody(req);
   const creds = parseCredentials(req.body);
   if (!creds) {
     res.status(400).json({ message: 'Email and password are required.' });
@@ -59,7 +62,12 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 
   const user = await UserModel.findOne({ email: creds.email });
-  if (!user || !(await bcrypt.compare(creds.password, user.passwordHash))) {
+  // Unknown emails still burn a bcrypt round so response timing cannot be
+  // used to discover which addresses have accounts.
+  const hash = user?.passwordHash ?? TIMING_EQUALIZER_HASH;
+  const valid = await bcrypt.compare(creds.password, hash);
+
+  if (!user || !valid) {
     res.status(401).json({ message: 'Invalid email or password.' });
     return;
   }

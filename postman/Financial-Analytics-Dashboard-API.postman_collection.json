@@ -39,6 +39,26 @@
       "name": "Auth",
       "item": [
         {
+          "name": "Get credential public key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "keys"
+              ]
+            },
+            "description": "Returns the RSA public key used to encrypt login/register bodies. Optional — the API also accepts plaintext JSON credentials."
+          },
+          "response": []
+        },
+        {
           "name": "Register",
           "request": {
             "method": "POST",

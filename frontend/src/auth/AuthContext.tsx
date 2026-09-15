@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, TOKEN_KEY, USER_KEY, type AuthUser } from '../api/client';
-import { fetchSummary } from '../hooks/useDashboardData';
+import { fetchSummary, fetchTransactionsPage } from '../hooks/useDashboardData';
 import { useLedgerMode, THEME_STORAGE_KEY } from '../theme/ThemeModeProvider';
 
 /** Payload the backend returns from both /auth/login and /auth/register. */
@@ -38,9 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  /** Warm the dashboard KPI cache so the first paint after sign-in has data. */
-  const prefetchSummary = useCallback(() => {
+  /** Warms every dashboard query so the first paint after sign-in has data. */
+  const prefetchDashboard = useCallback(() => {
+    const firstPage = { page: 0, limit: 10, sortBy: 'date', sortDir: 'desc' as const };
+    // All independent — run them in parallel, not sequentially.
     void queryClient.prefetchQuery({ queryKey: ['summary'], queryFn: fetchSummary });
+    void queryClient.prefetchQuery({
+      queryKey: ['transactions', firstPage],
+      queryFn: () => fetchTransactionsPage(firstPage),
+    });
   }, [queryClient]);
 
   const login = useCallback(
@@ -49,9 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(applySession(data));
       // The account's saved theme wins on sign-in.
       if (data.user.preferredTheme) setMode(data.user.preferredTheme);
-      prefetchSummary();
+      prefetchDashboard();
     },
-    [prefetchSummary],
+    [prefetchDashboard],
   );
 
   const register = useCallback(
@@ -59,9 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.post<AuthSession>('/auth/register', { name, email, password });
       setUser(applySession(data));
       if (data.user.preferredTheme) setMode(data.user.preferredTheme);
-      prefetchSummary();
+      prefetchDashboard();
     },
-    [prefetchSummary],
+    [prefetchDashboard],
   );
 
   const logout = useCallback(() => {

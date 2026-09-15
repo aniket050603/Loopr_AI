@@ -29,15 +29,18 @@ export async function fetchSummary(): Promise<SummaryResponse> {
   return data;
 }
 
+/** First-page fetcher, shared so the prefetch uses the exact cache key the table reads. */
+export async function fetchTransactionsPage(query: TableQuery): Promise<TransactionListResponse> {
+  const { data } = await api.get<TransactionListResponse>(
+    `/transactions?${buildTableParams(query)}`,
+  );
+  return data;
+}
+
 export function useTransactions(query: TableQuery) {
   return useQuery<TransactionListResponse>({
     queryKey: ['transactions', query],
-    queryFn: async () => {
-      const { data } = await api.get<TransactionListResponse>(
-        `/transactions?${buildTableParams(query)}`,
-      );
-      return data;
-    },
+    queryFn: () => fetchTransactionsPage(query),
     placeholderData: keepPreviousData,
   });
 }

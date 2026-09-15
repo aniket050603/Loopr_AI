@@ -1,11 +1,18 @@
-import { useState, type ReactNode } from 'react';import Box from '@mui/material/Box';
+import { useState, type ReactNode } from 'react';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { alpha, useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom';
 import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, getPalette, FONT_UI } from '../theme/theme';
 import { useLedgerMode, usePalette } from '../theme/ThemeModeProvider';
@@ -37,11 +44,100 @@ function ModeToggle() {
   );
 }
 
+/** Avatar button that opens an account menu with an explicit sign-out action. */
+function UserMenu() {
+  const { mode } = useLedgerMode();
+  const p = getPalette(mode);
+  const { user, logout } = useAuth();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+  const initial = (user?.name ?? user?.email ?? 'U').slice(0, 1).toUpperCase();
+
+  return (
+    <>
+      <Tooltip title="Account & sign out" arrow>
+        <IconButton
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          aria-label="Open account menu"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: '8px',
+            bgcolor: p.green,
+            color: '#0B0F19',
+            fontFamily: FONT_UI,
+            fontSize: 12.5,
+            fontWeight: 700,
+            outline: open ? `2px solid ${p.text}` : 'none',
+            outlineOffset: 2,
+            transition: 'all 0.18s ease',
+            '&:hover': { filter: 'brightness(1.08)' },
+          }}
+        >
+          {initial}
+        </IconButton>
+      </Tooltip>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              mt: 1,
+              minWidth: 224,
+              borderRadius: '10px',
+              border: `1px solid ${p.edge}`,
+              bgcolor: p.paper,
+              boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
+            },
+          },
+        }}
+      >
+        <Box sx={{ px: 1.5, pt: 1, pb: 0.75 }}>
+          <Typography sx={{ fontFamily: FONT_UI, fontWeight: 700, fontSize: 13.5, color: p.text }}>
+            {user?.name ?? 'Signed in'}
+          </Typography>
+          <Typography sx={{ fontFamily: FONT_UI, fontSize: 12, color: p.muted }}>
+            {user?.email}
+          </Typography>
+        </Box>
+        <Divider sx={{ borderColor: p.edge }} />
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            logout();
+          }}
+          sx={{
+            gap: 1,
+            fontFamily: FONT_UI,
+            fontSize: 13.5,
+            color: p.text,
+            py: 1.1,
+            '& .MuiListItemIcon-root': { minWidth: 32, color: p.muted },
+            '&:hover': { bgcolor: 'action.hover', color: p.red, '& .MuiListItemIcon-root': { color: p.red } },
+          }}
+        >
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          Sign out
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
+
 export default function AppShell({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const { mode } = useLedgerMode();
   const p = getPalette(mode);
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -170,27 +266,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
             <ModeToggle />
-
-            <IconButton
-              onClick={logout}
-              aria-label="Sign out"
-              title={user?.email ?? ''}
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                bgcolor: p.paper,
-                border: `1px solid ${p.edge}`,
-                color: p.text,
-                fontFamily: FONT_UI,
-                fontSize: 12.5,
-                fontWeight: 700,
-                transition: 'all 0.18s ease',
-                '&:hover': { color: p.red, borderColor: p.red },
-              }}
-            >
-              {(user?.name ?? user?.email ?? 'U').slice(0, 1).toUpperCase()}
-            </IconButton>
+            <UserMenu />
           </Box>
         </Box>
 

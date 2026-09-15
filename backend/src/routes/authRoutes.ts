@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, me, register, updateTheme } from '../controllers/authController.js';
+import {
+  login,
+  me,
+  register,
+  updateTheme,
+} from '../controllers/authController.js';
+import { getPublicKey } from '../controllers/keyController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -13,6 +19,9 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Too many attempts, please try again later.' },
 });
+
+// Public key for encrypting credential bodies (plaintext bodies still accepted).
+router.get('/keys', getPublicKey);
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
