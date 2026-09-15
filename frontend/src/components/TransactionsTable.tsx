@@ -29,13 +29,15 @@ import FilterBar from './FilterBar';
 import ExportModal from './ExportModal';
 import type { Transaction, TransactionFilters } from '../types';
 
+/** Column widths are percentages so wide screens distribute slack evenly
+ *  instead of pouring it all into the date column. */
 const COLUMNS: Array<{ key: keyof Transaction; label: string; labelMobile?: string; numeric?: boolean; hideOnMobile?: boolean; width?: number | string }> = [
-  { key: 'id', label: 'No.', labelMobile: '#', numeric: true, width: { xs: 34, md: 64 } as never },
-  { key: 'date', label: 'Date' },
-  { key: 'amount', label: 'Amount', numeric: true, width: { xs: 104, md: 140 } as never },
-  { key: 'category', label: 'Category', hideOnMobile: true, width: 110 },
-  { key: 'status', label: 'Status', width: { xs: 92, md: 104 } as never },
-  { key: 'user_id', label: 'User', hideOnMobile: true, width: 96 },
+  { key: 'id', label: 'No.', labelMobile: '#', numeric: true, width: { xs: '14%', md: '6%' } as never },
+  { key: 'date', label: 'Date', width: { xs: '40%', md: '30%' } as never },
+  { key: 'amount', label: 'Amount', numeric: true, width: { xs: '26%', md: '13%' } as never },
+  { key: 'category', label: 'Category', hideOnMobile: true, width: { md: '14%' } as never },
+  { key: 'status', label: 'Status', width: { xs: '20%', md: '14%' } as never },
+  { key: 'user_id', label: 'User', hideOnMobile: true, width: { md: '15%' } as never },
 ];
 
 const MONO = FONT_MONO;
