@@ -37,9 +37,8 @@ export default function DashboardPage() {
     <Box
       sx={{
         width: '100%',
-        maxWidth: 1480,
-        mx: 'auto',
-        px: { xs: 2.5, sm: 4, lg: 5 },
+        // Fluid width, padded to match the header so content edges align with it.
+        px: { xs: 2, sm: 3, md: 4 },
         py: { xs: 3, md: 4 },
         display: 'flex',
         flexDirection: 'column',
