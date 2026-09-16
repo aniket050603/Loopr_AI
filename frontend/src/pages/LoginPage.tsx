@@ -13,7 +13,7 @@ import { useAuth } from '../auth/AuthContext';
 import { showAlert } from '../components/SnackbarHost';
 import { LooprMark } from '../components/brand';
 import { LoginIntro } from '../components/LoginIntro';
-import { wakeApi } from '../api/client';
+import { prefetchApi } from '../api/client';
 
 const DEMO_EMAIL = 'demo@fin.com';
 const DEMO_PASSWORD = 'demo1234';
@@ -22,11 +22,12 @@ const DEMO_PASSWORD = 'demo1234';
 const INTRO_SEEN_KEY = 'loopr-intro-seen';
 
 /**
- * Fire-and-forget: starts waking the API the moment this chunk loads — before
- * React even mounts — so a sleeping free-tier host boots while the intro plays.
- * Silent by design; cold starts never surface in the UI.
+ * Fire-and-forget: warms the API at chunk load — before React even mounts —
+ * by prefetching the credential envelope key (a request login needs anyway).
+ * A sleeping free-tier host boots behind this while the intro plays, so by
+ * the time the user clicks Sign in, login is a single warm round trip.
  */
-void wakeApi();
+prefetchApi();
 
 /** Whether this visit should still see the intro (skipped for reduced motion). */
 function shouldShowIntro(): boolean {

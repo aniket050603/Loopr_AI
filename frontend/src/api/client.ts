@@ -18,28 +18,17 @@ const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:4000'}/api
  * to wake. Give real requests a generous ceiling instead of hanging forever.
  */
 const REQUEST_TIMEOUT_MS = 60_000;
-/** The wake ping only needs to start the boot; it never blocks the user. */
-const WAKE_TIMEOUT_MS = 15_000;
+/**
+ * The key prefetch doubles as the wake ping: Render *holds* requests while
+ * booting, so this request pends until the server is up, then answers —
+ * waking the API before the user can click Sign in. Generous ceiling.
+ */
+const PREFETCH_TIMEOUT_MS = 45_000;
 
 export const api = axios.create({
   baseURL: BASE_URL,
   timeout: REQUEST_TIMEOUT_MS,
 });
-
-/**
- * Fire-and-forget GET /health so a sleeping server boots while the user is
- * still on the login page. Resolves false if the server does not answer in
- * time — the wake-up itself continues server-side regardless.
- */
-export async function wakeApi(): Promise<boolean> {
-  try {
-    const healthUrl = BASE_URL.replace(/\/api\/?$/, '/health');
-    await axios.get(healthUrl, { timeout: WAKE_TIMEOUT_MS });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /* -------------------------------------------------------------------------
  * Credential envelope encryption
@@ -55,9 +44,23 @@ let publicKeyPromise: Promise<string> | null = null;
 /** Fetches (and caches) the server's public key for envelope encryption. */
 function getPublicKey(): Promise<string> {
   publicKeyPromise ??= axios
-    .get<{ publicKey: string }>(`${BASE_URL}/auth/keys`, { timeout: REQUEST_TIMEOUT_MS })
-    .then((res) => res.data.publicKey);
+    .get<{ publicKey: string }>(`${BASE_URL}/auth/keys`, { timeout: PREFETCH_TIMEOUT_MS })
+    .then((res) => res.data.publicKey)
+    .catch((error) => {
+      publicKeyPromise = null; // allow a clean retry on the next attempt
+      throw error;
+    });
   return publicKeyPromise;
+}
+
+/**
+ * Warms the API before the user can click Sign in: fetches the credential
+ * envelope key (a request login needs anyway) with a generous timeout, so a
+ * sleeping server boots behind it instead of blocking the actual login.
+ * Call once at page load — fire-and-forget, silent, never fails visibly.
+ */
+export function prefetchApi(): void {
+  void getPublicKey().catch(() => undefined);
 }
 
 /**
